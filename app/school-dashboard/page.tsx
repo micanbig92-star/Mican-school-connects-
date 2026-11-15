@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -143,81 +144,105 @@ export default async function SchoolDashboardPage() {
               <p className="dashboard-kicker">SCHOOL OVERVIEW</p>
               <h2>Your school at a glance</h2>
             </div>
-            <span className="dashboard-coming">MORE FEATURES COMING</span>
+            <span className="dashboard-coming">
+              MORE FEATURES COMING
+            </span>
           </div>
 
           <div className="dashboard-stats">
             <article className="dashboard-stat">
               <span className="stat-icon">🎓</span>
               <p>Students</p>
-              <strong>Not set up yet</strong>
-              <small>Student management is coming soon.</small>
+              <strong>Management available</strong>
+              <small>Open Student Management below.</small>
             </article>
 
             <article className="dashboard-stat">
               <span className="stat-icon">👩‍🏫</span>
               <p>Teachers</p>
-              <strong>Not set up yet</strong>
-              <small>Teacher management is coming soon.</small>
+              <strong>Coming soon</strong>
+              <small>Teacher management is being developed.</small>
             </article>
 
             <article className="dashboard-stat">
               <span className="stat-icon">🏫</span>
               <p>Classes</p>
-              <strong>Not set up yet</strong>
-              <small>Class management is coming soon.</small>
+              <strong>Management available</strong>
+              <small>Open Class Management below.</small>
             </article>
           </div>
         </section>
 
-        <section className="dashboard-section">
-          <p className="dashboard-kicker">MANAGEMENT CENTRE</p>
-          <h2>School management</h2>
+        {schools.map((school) => (
+          <section className="dashboard-section" key={school.id}>
+            <p className="dashboard-kicker">MANAGEMENT CENTRE</p>
+            <h2>{school.school_name}</h2>
 
-          <div className="dashboard-modules">
-            <article className="dashboard-module">
-              <span>🎓</span>
-              <h3>Student Management</h3>
-              <p>Register students and manage their school records.</p>
-              <small>Coming soon</small>
-            </article>
+            <div className="dashboard-modules">
+              <Link
+                href={`/school-dashboard/students/${school.id}`}
+                className="dashboard-module"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
+                <span>🎓</span>
+                <h3>Student Management</h3>
+                <p>
+                  Register students, assign classes and manage student records.
+                </p>
+                <small>Open student management →</small>
+              </Link>
 
-            <article className="dashboard-module">
-              <span>👩‍🏫</span>
-              <h3>Teacher Management</h3>
-              <p>Manage teacher profiles, subjects and permissions.</p>
-              <small>Coming soon</small>
-            </article>
+              <Link
+                href={`/school-dashboard/classes/${school.id}`}
+                className="dashboard-module"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
+                <span>📚</span>
+                <h3>Class Management</h3>
+                <p>
+                  Create classes, manage class arms and academic years.
+                </p>
+                <small>Open class management →</small>
+              </Link>
 
-            <article className="dashboard-module">
-              <span>📚</span>
-              <h3>Class Management</h3>
-              <p>Create classes, arms and subject assignments.</p>
-              <small>Coming soon</small>
-            </article>
+              <article className="dashboard-module">
+                <span>👩‍🏫</span>
+                <h3>Teacher Management</h3>
+                <p>
+                  Manage teacher profiles, subjects and permissions.
+                </p>
+                <small>Coming soon</small>
+              </article>
 
-            <article className="dashboard-module">
-              <span>📅</span>
-              <h3>Attendance</h3>
-              <p>Record and review daily student attendance.</p>
-              <small>Coming soon</small>
-            </article>
+              <article className="dashboard-module">
+                <span>📅</span>
+                <h3>Attendance</h3>
+                <p>
+                  Record and review daily student attendance.
+                </p>
+                <small>Coming soon</small>
+              </article>
 
-            <article className="dashboard-module">
-              <span>📢</span>
-              <h3>Announcements</h3>
-              <p>Share important school notices and updates.</p>
-              <small>Coming soon</small>
-            </article>
+              <article className="dashboard-module">
+                <span>📢</span>
+                <h3>Announcements</h3>
+                <p>
+                  Share important school notices and updates.
+                </p>
+                <small>Coming soon</small>
+              </article>
 
-            <article className="dashboard-module dashboard-live-module">
-              <span>🎥</span>
-              <h3>MICAN LIVE LEARNING</h3>
-              <p>Give eligible students access to scheduled live tutorials.</p>
-              <small>Planned feature</small>
-            </article>
-          </div>
-        </section>
+              <article className="dashboard-module dashboard-live-module">
+                <span>🎥</span>
+                <h3>MICAN LIVE LEARNING</h3>
+                <p>
+                  Give eligible students access to scheduled live tutorials.
+                </p>
+                <small>Planned feature</small>
+              </article>
+            </div>
+          </section>
+        ))}
 
         <footer className="dashboard-footer">
           One Network. Many Schools. One Connected Future.
