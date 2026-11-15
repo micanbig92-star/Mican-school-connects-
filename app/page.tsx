@@ -1,3 +1,4 @@
+
 const features = [
   {
     number: "01",
@@ -68,7 +69,11 @@ export default function Home() {
             <a href="#features">Platform</a>
             <a href="#vision">Our Vision</a>
             <a href="/register-school">Register School</a>
-            <a href="/sign-in">Sign In</a>
+
+            <a href="/sign-in" className="nav-signin">
+              Sign In
+            </a>
+
             <a href="/school-access">School Portal</a>
           </div>
 
@@ -324,4 +329,17 @@ export default function Home() {
       </footer>
     </>
   );
+}
+.nav-signin {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #087f83 !important;
+  font-weight: 800 !important;
+  position: relative;
+  z-index: 5;
+}
+
+.nav-signin:hover {
+  color: #102b4d !important;
 }
