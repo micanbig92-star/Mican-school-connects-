@@ -950,4 +950,77 @@ a {
     white-space: nowrap;
   }
 }
+/* MICAN SCHOOLS CONNECT — Sign In Design */
 
+.signin-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  color: #102b4d;
+  background:
+    radial-gradient(circle at 10% 15%, rgba(8,127,131,.15), transparent 28%),
+    radial-gradient(circle at 90% 85%, rgba(214,169,79,.17), transparent 28%),
+    linear-gradient(135deg, #f4f8ff, #eaf8f5 55%, #fff8ed);
+}
+
+.signin-shell {
+  width: 100%;
+  max-width: 440px;
+}
+
+.signin-card {
+  margin-top: 32px;
+  padding: 32px;
+  color: #102b4d;
+  background: rgba(255,255,255,.96);
+  border: 1px solid #dcebe9;
+  border-radius: 20px;
+  box-shadow: 0 24px 65px rgba(16,43,77,.12);
+}
+
+.signin-input {
+  width: 100%;
+  padding: 13px 16px;
+  color: #102b4d;
+  background: #f8fbff;
+  border: 1px solid #cbd9e5;
+  border-radius: 9px;
+  outline: none;
+  transition: .2s ease;
+}
+
+.signin-input:focus {
+  border-color: #087f83;
+  box-shadow: 0 0 0 4px rgba(8,127,131,.12);
+}
+
+.signin-button {
+  width: 100%;
+  padding: 14px 16px;
+  color: white;
+  font-weight: 700;
+  background: linear-gradient(110deg, #102b4d, #087f83);
+  border: none;
+  border-radius: 9px;
+  box-shadow: 0 10px 22px rgba(8,127,131,.2);
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.signin-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.signin-button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+@media (max-width: 480px) {
+  .signin-card {
+    padding: 24px 20px;
+  }
+}
