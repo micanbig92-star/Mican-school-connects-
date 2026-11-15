@@ -330,16 +330,3 @@ export default function Home() {
     </>
   );
 }
-.nav-signin {
-  display: inline-flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  color: #087f83 !important;
-  font-weight: 800 !important;
-  position: relative;
-  z-index: 5;
-}
-
-.nav-signin:hover {
-  color: #102b4d !important;
-}
