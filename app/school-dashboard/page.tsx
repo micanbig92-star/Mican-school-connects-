@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -214,14 +215,18 @@ export default async function SchoolDashboardPage() {
                 <small>Open teacher management →</small>
               </Link>
 
-              <article className="dashboard-module">
+              <Link
+                href={`/school-dashboard/attendance/${school.id}`}
+                className="dashboard-module"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
                 <span>📅</span>
-                <h3>Attendance</h3>
+                <h3>Attendance Management</h3>
                 <p>
-                  Record and review daily student attendance.
+                  Record daily student attendance and review previous records.
                 </p>
-                <small>Coming soon</small>
-              </article>
+                <small>Open attendance management →</small>
+              </Link>
 
               <article className="dashboard-module">
                 <span>📢</span>
