@@ -324,4 +324,78 @@
   .registration-card-heading h2 {
     font-size: 26px;
   }
+}/* MICAN School Registration — Premium Design */
+
+.registration-page {
+  background:
+    radial-gradient(circle at 8% 18%, rgba(8,127,131,.11), transparent 26%),
+    radial-gradient(circle at 92% 72%, rgba(214,169,79,.13), transparent 25%),
+    linear-gradient(135deg, #f5f9ff, #eef8f6 58%, #fff9ef);
+}
+
+.registration-top {
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(12px);
+}
+
+.registration-mark {
+  background: linear-gradient(135deg, #102b4d, #087f83);
+  box-shadow: 0 7px 18px rgba(8,127,131,.2);
+}
+
+.registration-steps b {
+  border-color: #cce7e3;
+  background: #eaf8f5;
+}
+
+.registration-card {
+  border-color: #dcebe9;
+  border-radius: 18px;
+  box-shadow: 0 24px 65px rgba(16,43,77,.1);
+}
+
+.registration-card-heading > span,
+.registration-kicker {
+  color: #087f83;
+}
+
+.school-registration-form input,
+.school-registration-form select {
+  border-radius: 9px;
+  background: #fbfdff;
+}
+
+.school-registration-form input:focus,
+.school-registration-form select:focus {
+  border-color: #087f83;
+  box-shadow: 0 0 0 4px rgba(8,127,131,.12);
+}
+
+.registration-security-note {
+  border-left-color: #087f83;
+  border-radius: 0 9px 9px 0;
+  background: linear-gradient(90deg, #eaf8f5, #f4f8ff);
+}
+
+.registration-submit {
+  height: 50px;
+  border-radius: 9px;
+  background: linear-gradient(110deg, #102b4d, #087f83);
+  box-shadow: 0 10px 22px rgba(8,127,131,.18);
+  cursor: pointer;
+  transition: transform .2s ease, filter .2s ease;
+}
+
+.registration-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.registration-submit:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.registration-footer-note a {
+  color: #087f83;
 }
