@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPlatformAdmin } from "@/lib/supabase/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -91,7 +92,6 @@ export default async function PlatformAdminPage() {
   return (
     <main className="min-h-screen bg-slate-100 text-slate-800">
       <div className="flex min-h-screen flex-col md:flex-row">
-
         <aside className="w-full bg-[#101d35] text-white md:fixed md:inset-y-0 md:w-64">
           <div className="border-b border-white/10 px-6 py-7">
             <div className="flex items-center gap-3">
@@ -114,9 +114,11 @@ export default async function PlatformAdminPage() {
             <a href="#overview" className="flex items-center gap-3 rounded-xl bg-teal-500/15 px-4 py-3 font-semibold text-teal-300">
               <span>▦</span> Overview
             </a>
+
             <a href="#schools" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-300 hover:bg-white/10">
               <span>🏫</span> All schools
             </a>
+
             <a href="#applications" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-300 hover:bg-white/10">
               <span>📋</span> Applications
               {pending > 0 && (
@@ -125,9 +127,17 @@ export default async function PlatformAdminPage() {
                 </span>
               )}
             </a>
+
             <a href="#platform-summary" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-300 hover:bg-white/10">
               <span>📊</span> Platform summary
             </a>
+
+            <Link
+              href="/platform-admin/live-learning"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-teal-200 hover:bg-white/10"
+            >
+              <span>🎥</span> MICAN LIVE LEARNING
+            </Link>
           </nav>
 
           <div className="border-t border-white/10 p-4 md:absolute md:bottom-0 md:left-0 md:right-0">
@@ -162,7 +172,6 @@ export default async function PlatformAdminPage() {
           </header>
 
           <div className="space-y-8 p-5 md:p-9">
-
             <section id="overview" className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#142b4b] to-[#176b70] p-6 text-white shadow-lg md:p-9">
               <p className="text-xs font-bold uppercase tracking-[3px] text-teal-200">
                 Welcome to your control centre
@@ -177,6 +186,37 @@ export default async function PlatformAdminPage() {
               <a href="#schools" className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#142b4b] hover:bg-teal-50">
                 View registered schools →
               </a>
+            </section>
+
+            <section>
+              <div className="mb-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-teal-700">
+                  Learning network
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">
+                  MICAN education services
+                </h2>
+              </div>
+
+              <Link
+                href="/platform-admin/live-learning"
+                className="block rounded-2xl border border-teal-200 bg-white p-6 shadow-sm transition hover:border-teal-500 hover:shadow-md"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-2xl">🎥</p>
+                    <h3 className="mt-3 text-lg font-bold text-slate-900">
+                      MICAN LIVE LEARNING
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Create and manage scheduled tutorials for participating schools.
+                    </p>
+                  </div>
+                  <span className="rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white">
+                    Open Live Learning →
+                  </span>
+                </div>
+              </Link>
             </section>
 
             <section id="platform-summary">
@@ -308,7 +348,6 @@ export default async function PlatformAdminPage() {
                         </span>
                       </div>
 
-                      {/* School management actions */}
                       <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
                         {school.status === "pending_review" && (
                           <>
@@ -385,7 +424,6 @@ export default async function PlatformAdminPage() {
                 Private platform administration
               </p>
             </footer>
-
           </div>
         </section>
       </div>
