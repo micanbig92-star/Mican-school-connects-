@@ -23,10 +23,10 @@ export default async function SchoolAccessPage() {
 
   if (membershipError) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-        <div className="max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8">
+      <main className="school-access-page">
+        <div className="access-card">
           <h1 className="text-2xl font-bold">Unable to check access</h1>
-          <p className="mt-3 text-slate-400">
+          <p className="mt-3 text-slate-500">
             We could not check your school application. Please try again later.
           </p>
         </div>
@@ -52,10 +52,10 @@ export default async function SchoolAccessPage() {
 
     if (error) {
       return (
-        <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-          <div className="max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-8">
+        <main className="school-access-page">
+          <div className="access-card">
             <h1 className="text-2xl font-bold">Unable to load school</h1>
-            <p className="mt-3 text-slate-400">
+            <p className="mt-3 text-slate-500">
               Please try again later.
             </p>
           </div>
@@ -81,105 +81,130 @@ export default async function SchoolAccessPage() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-5 py-12">
-      <div className="mx-auto max-w-3xl">
-        <p className="text-sm font-bold tracking-widest text-cyan-400">
-          MICAN TECHNOLOGIES
-        </p>
+    <main className="school-access-page">
+      <div className="access-container">
+        <header className="access-header">
+          <p className="access-brand">MICAN TECHNOLOGIES</p>
 
-        <h1 className="mt-4 text-3xl font-bold">
-          Your school access
-        </h1>
+          <span className="access-label">
+            SCHOOL PORTAL
+          </span>
+        </header>
 
-        <p className="mt-2 text-slate-400">
-          Your account is signed in. Here is the status of your school access.
-        </p>
+        <section className="access-intro">
+          <p className="access-kicker">WELCOME TO YOUR SCHOOL PORTAL</p>
+
+          <h1>Your school access</h1>
+
+          <p>
+            Your account is signed in. Here is the status of your school access.
+          </p>
+        </section>
 
         {applications.length === 0 ? (
-          <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <section className="access-card">
             <h2 className="text-xl font-semibold">
               No school application found
             </h2>
-            <p className="mt-3 text-slate-400">
+
+            <p className="mt-3 text-slate-500">
               We could not find a school application connected to this account.
             </p>
-            <Link
-              href="/register-school"
-              className="mt-5 inline-block text-cyan-400 hover:underline"
-            >
+
+            <Link href="/register-school" className="access-link">
               Register a school
             </Link>
           </section>
         ) : (
-          <div className="mt-8 space-y-5">
-            {applications.map(({ membership, school }, index) => (
-              <section
-                key={`${membership.school_id}-${index}`}
-                className="rounded-2xl border border-slate-800 bg-slate-900 p-6"
-              >
-                <h2 className="text-xl font-semibold">
-                  {school?.school_name || "School application"}
-                </h2>
+          <div className="access-applications">
+            {applications.map(({ membership, school }, index) => {
+              const status = school?.status || "unavailable";
 
-                <p className="mt-3 text-sm text-slate-400">
-                  Application status:{" "}
-                  <span className="font-semibold text-white">
-                    {school?.status || "Unavailable"}
-                  </span>
-                </p>
+              const statusClass =
+                status === "approved"
+                  ? "status-approved"
+                  : status === "rejected"
+                    ? "status-rejected"
+                    : status === "suspended"
+                      ? "status-suspended"
+                      : "status-pending";
 
-                <p className="mt-2 text-sm text-slate-400">
-                  Membership status:{" "}
-                  <span className="font-semibold text-white">
-                    {membership.status}
-                  </span>
-                </p>
+              return (
+                <section
+                  key={`${membership.school_id}-${index}`}
+                  className="access-card"
+                >
+                  <div className="access-school-heading">
+                    <div>
+                      <p className="access-kicker">SCHOOL APPLICATION</p>
 
-                {school?.status === "approved" &&
-                membership.status === "active" ? (
-                  <p className="mt-4 text-green-400">
-                    Your school access has been approved.
-                  </p>
-                ) : school?.status === "rejected" ? (
-                  <p className="mt-4 text-red-400">
-                    This school application was not approved.
-                  </p>
-                ) : school?.status === "suspended" ||
-                  membership.status === "suspended" ? (
-                  <p className="mt-4 text-yellow-400">
-                    School access is currently suspended.
-                  </p>
-                ) : (
-                  <p className="mt-4 text-yellow-400">
-                    Your application is awaiting review. Please check again later.
-                  </p>
-                )}
-              </section>
-            ))}
+                      <h2>
+                        {school?.school_name || "School application"}
+                      </h2>
+                    </div>
+
+                    <span className={`access-status ${statusClass}`}>
+                      {status.replace("_", " ")}
+                    </span>
+                  </div>
+
+                  <div className="access-details">
+                    <div>
+                      <span>Application status</span>
+                      <strong>{school?.status || "Unavailable"}</strong>
+                    </div>
+
+                    <div>
+                      <span>Membership status</span>
+                      <strong>{membership.status}</strong>
+                    </div>
+                  </div>
+
+                  {school?.status === "approved" &&
+                  membership.status === "active" ? (
+                    <p className="access-message message-approved">
+                      Your school access has been approved.
+                    </p>
+                  ) : school?.status === "rejected" ? (
+                    <p className="access-message message-rejected">
+                      This school application was not approved.
+                    </p>
+                  ) : school?.status === "suspended" ||
+                    membership.status === "suspended" ? (
+                    <p className="access-message message-suspended">
+                      School access is currently suspended.
+                    </p>
+                  ) : (
+                    <p className="access-message message-pending">
+                      Your application is awaiting review. Please check again later.
+                    </p>
+                  )}
+                </section>
+              );
+            })}
           </div>
         )}
 
         {hasApprovedAccess && (
-          <section className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-slate-300">
+          <section className="access-notice">
+            <h2>School access confirmed</h2>
+
+            <p>
               Your school is approved. The school workspace dashboard is still
               under development and will be made available when ready.
             </p>
           </section>
         )}
 
-        <form action="/auth/sign-out" method="post" className="mt-8">
-          <button
-            type="submit"
-            className="rounded-lg border border-slate-700 px-5 py-3 text-white hover:bg-slate-800"
-          >
+        <form action="/auth/sign-out" method="post" className="access-signout">
+          <button type="submit">
             Sign out
           </button>
         </form>
 
-        <p className="mt-8 text-xs text-slate-500">
+        <footer className="access-footer">
           One Network. Many Schools. One Connected Future.
-        </p>
+        </footer>
       </div>
     </main>
   );
