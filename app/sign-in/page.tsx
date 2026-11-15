@@ -42,13 +42,13 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-5 py-12">
-      <div className="w-full max-w-md">
+    <main className="signin-page">
+      <div className="signin-shell">
         <Link href="/" className="text-sm text-cyan-400">
           ← Back to homepage
         </Link>
 
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-xl">
+        <div className="signin-card">
           <div className="mb-7">
             <p className="text-cyan-400 font-bold tracking-widest text-sm">
               MICAN TECHNOLOGIES
@@ -77,7 +77,7 @@ export default function SignInPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Enter your email"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-400"
+                className="signin-input"
               />
             </div>
 
@@ -94,7 +94,7 @@ export default function SignInPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Enter your password"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-400"
+                className="signin-input"
               />
             </div>
 
@@ -107,7 +107,7 @@ export default function SignInPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-cyan-500 px-4 py-3 font-bold text-slate-950 hover:bg-cyan-400 disabled:opacity-60"
+              className="signin-button"
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
