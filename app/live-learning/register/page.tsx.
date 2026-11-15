@@ -1,0 +1,237 @@
+
+"use client";
+
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+
+export default function LiveTeacherRegistrationPage() {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+
+    const form = new FormData(event.currentTarget);
+    const fullName = String(form.get("fullName") || "").trim();
+    const email = String(form.get("email") || "").trim().toLowerCase();
+    const subject = String(form.get("subject") || "").trim();
+    const password = String(form.get("password") || "");
+    const confirmPassword = String(form.get("confirmPassword") || "");
+
+    if (fullName.length < 2 || fullName.length > 160) {
+      setError("Enter your full name.");
+      return;
+    }
+
+    if (subject.length > 160) {
+      setError("Subject specialisation is too long.");
+      return;
+    }
+
+    if (password.length < 10 || password.length > 72) {
+      setError("Password must contain 10–72 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("The passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/teacher-callback`,
+          data: {
+            live_teacher_registration: {
+              fullName,
+              subjectSpecialisation: subject,
+            },
+          },
+        },
+      });
+
+      if (signUpError) {
+        setError(
+          "We could not start registration. Check the details and try again."
+        );
+        return;
+      }
+
+      setMessage(
+        "Registration started. Check your email and click the verification link. Your application will remain pending until MICAN reviews it."
+      );
+
+      event.currentTarget.reset();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 px-4 py-10 text-white">
+      <div className="mx-auto max-w-xl">
+        <Link
+          href="/"
+          className="text-sm text-teal-300 hover:underline"
+        >
+          ← Back to homepage
+        </Link>
+
+        <section className="mt-7 rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-xl md:p-9">
+          <p className="text-xs font-bold uppercase tracking-[3px] text-teal-300">
+            MICAN TECHNOLOGIES
+          </p>
+
+          <h1 className="mt-4 text-3xl font-black">
+            MICAN LIVE LEARNING
+          </h1>
+
+          <h2 className="mt-3 text-xl font-bold">
+            Teacher registration
+          </h2>
+
+          <p className="mt-3 text-sm leading-6 text-slate-400">
+            Apply to become a MICAN Live Learning teacher. You must verify
+            your email and wait for Super Admin approval before you can
+            receive tutorial assignments.
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div>
+              <label htmlFor="fullName" className="mb-2 block text-sm font-semibold">
+                Full name
+              </label>
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                required
+                minLength={2}
+                maxLength={160}
+                autoComplete="name"
+                placeholder="Enter your full name"
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-white outline-none focus:border-teal-400"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                maxLength={254}
+                autoComplete="email"
+                placeholder="teacher@example.com"
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-white outline-none focus:border-teal-400"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="subject" className="mb-2 block text-sm font-semibold">
+                Subject specialisation
+                <span className="ml-2 font-normal text-slate-400">
+                  Optional
+                </span>
+              </label>
+              <input
+                id="subject"
+                name="subject"
+                type="text"
+                maxLength={160}
+                placeholder="Example: Mathematics"
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-white outline-none focus:border-teal-400"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold">
+                Create password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                minLength={10}
+                maxLength={72}
+                autoComplete="new-password"
+                placeholder="At least 10 characters"
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-white outline-none focus:border-teal-400"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold">
+                Confirm password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                minLength={10}
+                maxLength={72}
+                autoComplete="new-password"
+                placeholder="Enter the password again"
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 p-3 text-white outline-none focus:border-teal-400"
+              />
+            </div>
+
+            {error && (
+              <p role="alert" className="rounded-xl bg-rose-950 p-3 text-sm text-rose-300">
+                {error}
+              </p>
+            )}
+
+            {message && (
+              <p role="status" className="rounded-xl bg-emerald-950 p-3 text-sm text-emerald-300">
+                {message}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-teal-600 px-5 py-4 font-bold text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Submitting..." : "Register as a teacher"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-xs leading-6 text-slate-400">
+            Registration does not automatically approve a teacher.
+            MICAN Super Admin approval is required.
+          </p>
+
+          <p className="mt-4 text-center text-sm text-slate-400">
+            Already have an account?{" "}
+            <Link href="/sign-in" className="font-semibold text-teal-300 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </section>
+
+        <p className="mt-6 text-center text-xs text-slate-500">
+          MICAN TECHNOLOGIES · One Network. Many Schools. One Connected Future.
+        </p>
+      </div>
+    </main>
+  );
+}
