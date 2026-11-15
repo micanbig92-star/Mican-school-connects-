@@ -845,4 +845,109 @@ a {
     scroll-behavior: auto !important;
     transition-duration: .01ms !important;
   }
+}/* MICAN SCHOOLS CONNECT — Visual Refresh */
+
+.nav-links {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 18px;
 }
+
+.nav-links a {
+  padding: 8px 10px;
+  border-radius: 999px;
+  transition: .2s ease;
+}
+
+.nav-links a:hover {
+  background: #e7f6f4;
+  color: #087f83;
+}
+
+.btn-nav {
+  background: linear-gradient(135deg, #e2f5f1, #edf2ff);
+  border: 1px solid #d7ebe7;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #102b4d, #087f83);
+  box-shadow: 0 12px 26px rgba(8,127,131,.2);
+}
+
+.hero {
+  background:
+    radial-gradient(ellipse at 82% 20%, rgba(255,211,128,.34), transparent 29%),
+    radial-gradient(ellipse at 15% 85%, rgba(96,190,185,.2), transparent 32%),
+    linear-gradient(120deg, #f7fbff, #eaf7f5 55%, #f8f3e9);
+}
+
+.hero h1 span {
+  background: linear-gradient(90deg, #087f83, #d39a36);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.network-visual {
+  background: linear-gradient(145deg, #fff, #e8f7f5);
+  box-shadow: 0 28px 70px rgba(16,43,77,.13);
+}
+
+.node-school span {
+  background: #fff3dc;
+  color: #b77a19;
+}
+
+.node-teacher span {
+  background: #e5efff;
+  color: #3869b0;
+}
+
+.node-student span {
+  background: #e2f6ed;
+  color: #16835b;
+}
+
+.features-section {
+  background:
+    radial-gradient(circle at 5% 10%, rgba(8,127,131,.08), transparent 25%),
+    linear-gradient(135deg, #f0f7ff, #f1faf7 55%, #fff8ec);
+}
+
+.feature-card {
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(16,43,77,.05);
+}
+
+.feature-card:nth-child(3n + 1) {
+  border-top: 3px solid #087f83;
+}
+
+.feature-card:nth-child(3n + 2) {
+  border-top: 3px solid #d6a94f;
+}
+
+.feature-card:nth-child(3n) {
+  border-top: 3px solid #6389c9;
+}
+
+.vision-panel {
+  background:
+    radial-gradient(circle at 83% 45%, rgba(214,169,79,.34), transparent 25%),
+    radial-gradient(circle at 65% 80%, rgba(50,173,164,.3), transparent 30%),
+    linear-gradient(120deg, #102b4d, #087f83);
+}
+
+@media (max-width: 680px) {
+  .nav-links {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 2px 0 7px;
+  }
+
+  .nav-links a {
+    white-space: nowrap;
+  }
+}
+
