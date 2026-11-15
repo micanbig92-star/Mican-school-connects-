@@ -228,14 +228,18 @@ export default async function SchoolDashboardPage() {
                 <small>Open attendance management →</small>
               </Link>
 
-              <article className="dashboard-module">
+              <Link
+                href={`/school-dashboard/announcements/${school.id}`}
+                className="dashboard-module"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
                 <span>📢</span>
-                <h3>Announcements</h3>
+                <h3>Announcements Management</h3>
                 <p>
-                  Share important school notices and updates.
+                  Create, edit and manage important school notices and updates.
                 </p>
-                <small>Coming soon</small>
-              </article>
+                <small>Open announcements management →</small>
+              </Link>
 
               <article className="dashboard-module dashboard-live-module">
                 <span>🎥</span>
