@@ -1,3 +1,4 @@
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getPlatformAdmin } from "@/lib/supabase/platform-admin";
@@ -86,6 +87,32 @@ export default async function LiveLearningAdminPage() {
             ← Back to Super Admin
           </Link>
         </header>
+
+        {/* Teacher Applications Navigation */}
+        <section className="rounded-2xl border border-teal-200 bg-white p-5 shadow-sm md:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-teal-700">
+                Teacher management
+              </p>
+
+              <h2 className="mt-2 text-xl font-bold text-slate-900">
+                MICAN Live Learning Teachers
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-600">
+                Review teacher applications and approve or reject applicants.
+              </p>
+            </div>
+
+            <Link
+              href="/platform-admin/live-learning/teachers"
+              className="rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white hover:bg-teal-800"
+            >
+              Manage Teacher Applications →
+            </Link>
+          </div>
+        </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
           <div className="mb-6">
