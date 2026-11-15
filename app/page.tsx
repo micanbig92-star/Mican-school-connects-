@@ -1,264 +1,330 @@
 
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+const features = [
+  {
+    number: "01",
+    label: "CONNECT",
+    title: "School Network",
+    description:
+      "Connect schools, build partnerships and discover educational communities.",
+  },
+  {
+    number: "02",
+    label: "COMPETE",
+    title: "Global Arena",
+    description:
+      "Bring schools together through supervised academic competitions.",
+  },
+  {
+    number: "03",
+    label: "SHOWCASE",
+    title: "Student Portfolio",
+    description:
+      "Showcase student projects, skills and achievements.",
+  },
+  {
+    number: "04",
+    label: "COLLABORATE",
+    title: "Teacher Connect",
+    description:
+      "Create opportunities for teachers to collaborate and share knowledge.",
+  },
+  {
+    number: "05",
+    label: "DISCOVER",
+    title: "Learning Resources",
+    description:
+      "Discover approved educational notes and learning materials.",
+  },
+  {
+    number: "06",
+    label: "BELONG",
+    title: "School Community",
+    description:
+      "Build a connected educational community across institutions.",
+  },
+];
 
-export default async function SchoolDashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/sign-in");
-  }
-
-  const admin = createAdminClient();
-
-  const { data: memberships, error: membershipError } = await admin
-    .from("school_memberships")
-    .select("school_id, role, status")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .in("role", ["owner", "admin"]);
-
-  if (membershipError) {
-    return (
-      <main className="school-dashboard-page">
-        <section className="dashboard-card">
-          <h1>Unable to load your dashboard</h1>
-          <p>Please try again later.</p>
-        </section>
-      </main>
-    );
-  }
-
-  const schoolIds = [
-    ...new Set((memberships || []).map((item) => item.school_id)),
-  ];
-
-  if (schoolIds.length === 0) {
-    redirect("/school-access");
-  }
-
-  const { data: schools, error: schoolError } = await admin
-    .from("schools")
-    .select(
-      "id, school_name, school_type, country, state, city, contact_email, contact_phone, status"
-    )
-    .in("id", schoolIds)
-    .eq("status", "approved");
-
-  if (schoolError) {
-    return (
-      <main className="school-dashboard-page">
-        <section className="dashboard-card">
-          <h1>Unable to load school information</h1>
-          <p>Please try again later.</p>
-        </section>
-      </main>
-    );
-  }
-
-  if (!schools || schools.length === 0) {
-    redirect("/school-access");
-  }
-
+export default function Home() {
   return (
-    <main className="school-dashboard-page">
-      <div className="dashboard-container">
-        <header className="dashboard-header">
-          <div>
-            <p className="dashboard-brand">MICAN SCHOOLS CONNECT</p>
-            <span className="dashboard-label">SCHOOL MANAGEMENT</span>
-          </div>
-
-          <form action="/auth/sign-out" method="post">
-            <button className="dashboard-signout" type="submit">
-              Sign out
-            </button>
-          </form>
-        </header>
-
-        <section className="dashboard-welcome">
-          <p className="dashboard-kicker">SCHOOL WORKSPACE</p>
-          <h1>Welcome to your dashboard</h1>
-          <p>
-            Manage your school activities from one organised workspace.
-          </p>
-        </section>
-
-        {schools.map((school) => {
-          const membership = memberships.find(
-            (item) => item.school_id === school.id
-          );
-
-          return (
-            <section className="dashboard-school" key={school.id}>
-              <div className="dashboard-school-heading">
-                <div>
-                  <p className="dashboard-kicker">YOUR SCHOOL</p>
-                  <h2>{school.school_name}</h2>
-                  <p>
-                    {school.city}, {school.state}, {school.country}
-                  </p>
-                </div>
-
-                <span className="dashboard-approved">Approved</span>
-              </div>
-
-              <div className="dashboard-details">
-                <div>
-                  <span>School type</span>
-                  <strong>{school.school_type}</strong>
-                </div>
-
-                <div>
-                  <span>Your role</span>
-                  <strong>{membership?.role || "School member"}</strong>
-                </div>
-
-                <div>
-                  <span>Contact email</span>
-                  <strong>{school.contact_email}</strong>
-                </div>
-
-                <div>
-                  <span>Contact phone</span>
-                  <strong>{school.contact_phone}</strong>
-                </div>
-              </div>
-            </section>
-          );
-        })}
-
-        <section className="dashboard-section">
-          <div className="dashboard-section-heading">
-            <div>
-              <p className="dashboard-kicker">SCHOOL OVERVIEW</p>
-              <h2>Your school at a glance</h2>
-            </div>
-            <span className="dashboard-coming">
-              MORE FEATURES COMING
-            </span>
-          </div>
-
-          <div className="dashboard-stats">
-            <article className="dashboard-stat">
-              <span className="stat-icon">🎓</span>
-              <p>Students</p>
-              <strong>Management available</strong>
-              <small>Open Student Management below.</small>
-            </article>
-
-            <article className="dashboard-stat">
-              <span className="stat-icon">👩‍🏫</span>
-              <p>Teachers</p>
-              <strong>Management available</strong>
-              <small>Open Teacher Management below.</small>
-            </article>
-
-            <article className="dashboard-stat">
-              <span className="stat-icon">🏫</span>
-              <p>Classes</p>
-              <strong>Management available</strong>
-              <small>Open Class Management below.</small>
-            </article>
-          </div>
-        </section>
-
-        {schools.map((school) => (
-          <section className="dashboard-section" key={school.id}>
-            <p className="dashboard-kicker">MANAGEMENT CENTRE</p>
-            <h2>{school.school_name}</h2>
-
-            <div className="dashboard-modules">
-              <Link
-                href={`/school-dashboard/students/${school.id}`}
-                className="dashboard-module"
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
-                <span>🎓</span>
-                <h3>Student Management</h3>
-                <p>
-                  Register students, assign classes and manage student records.
-                </p>
-                <small>Open student management →</small>
-              </Link>
-
-              <Link
-                href={`/school-dashboard/classes/${school.id}`}
-                className="dashboard-module"
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
-                <span>📚</span>
-                <h3>Class Management</h3>
-                <p>
-                  Create classes, manage class arms and academic years.
-                </p>
-                <small>Open class management →</small>
-              </Link>
-
-              <Link
-                href={`/school-dashboard/teachers/${school.id}`}
-                className="dashboard-module"
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
-                <span>👩‍🏫</span>
-                <h3>Teacher Management</h3>
-                <p>
-                  Register teachers, edit staff records and manage employment
-                  status.
-                </p>
-                <small>Open teacher management →</small>
-              </Link>
-
-              <Link
-                href={`/school-dashboard/attendance/${school.id}`}
-                className="dashboard-module"
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
-                <span>📅</span>
-                <h3>Attendance Management</h3>
-                <p>
-                  Record daily student attendance and review previous records.
-                </p>
-                <small>Open attendance management →</small>
-              </Link>
-
-              <Link
-                href={`/school-dashboard/announcements/${school.id}`}
-                className="dashboard-module"
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
-                <span>📢</span>
-                <h3>Announcements Management</h3>
-                <p>
-                  Create, edit and manage important school notices and updates.
-                </p>
-                <small>Open announcements management →</small>
-              </Link>
-
-              <article className="dashboard-module dashboard-live-module">
-                <span>🎥</span>
-                <h3>MICAN LIVE LEARNING</h3>
-                <p>
-                  Give eligible students access to scheduled live tutorials.
-                </p>
-                <small>Planned feature</small>
-              </article>
-            </div>
-          </section>
-        ))}
-
-        <footer className="dashboard-footer">
-          One Network. Many Schools. One Connected Future.
-          <br />
-          © MICAN Technologies
-        </footer>
+    <>
+      <div className="announcement">
+        <div className="container announcement-inner">
+          <span className="announcement-dot" />
+          NIGERIA FIRST. GLOBAL BY DESIGN.
+        </div>
       </div>
-    </main>
+
+      <header className="site-header">
+        <nav className="container navbar">
+          <a href="#home" className="brand">
+            <span className="brand-mark">M</span>
+            <span className="brand-copy">
+              <strong>MICAN</strong>
+              <small>SCHOOLS CONNECT</small>
+            </span>
+          </a>
+
+          <div className="nav-links">
+            <a href="#about">About</a>
+            <a href="#features">Platform</a>
+            <a href="#vision">Our Vision</a>
+            <a href="/register-school">Register School</a>
+            <a href="/sign-in" className="nav-signin">
+              Sign In
+            </a>
+            <a href="/school-access">School Portal</a>
+          </div>
+
+          <a href="#features" className="btn btn-nav">
+            Explore Platform →
+          </a>
+        </nav>
+      </header>
+
+      <main id="home">
+        <section className="hero">
+          <div className="container hero-grid">
+            <div className="hero-copy">
+              <span className="eyebrow">
+                A CONNECTED FUTURE FOR EDUCATION
+              </span>
+
+              <h1>
+                One Network.
+                <br />
+                Many Schools.
+                <br />
+                <span>One Shared Future.</span>
+              </h1>
+
+              <p className="hero-description">
+                A digital home for school communities to connect,
+                collaborate and create new opportunities for education.
+                Starting in Nigeria and reaching beyond.
+              </p>
+
+              <div className="hero-actions">
+                <a href="#features" className="btn btn-primary">
+                  Discover the Platform →
+                </a>
+                <a href="#about" className="text-link">
+                  Get to Know Us ↗
+                </a>
+              </div>
+
+              <div className="hero-note">
+                CREATED BY MICAN TECHNOLOGIES
+              </div>
+            </div>
+
+            <div className="network-visual">
+              <div className="visual-topline">
+                <span>THE SCHOOL NETWORK</span>
+                <span>MICAN GLOBAL VISION</span>
+              </div>
+
+              <div className="network-stage">
+                <div className="orbit orbit-one" />
+                <div className="orbit orbit-two" />
+
+                <div className="network-line line-one" />
+                <div className="network-line line-two" />
+                <div className="network-line line-three" />
+
+                <div className="network-node node-school">
+                  <span>S</span> Schools
+                </div>
+
+                <div className="network-node node-teacher">
+                  <span>T</span> Teachers
+                </div>
+
+                <div className="network-node node-student">
+                  <span>P</span> Students
+                </div>
+
+                <div className="network-core">
+                  <div className="core-mark">M</div>
+                  <strong>MICAN</strong>
+                  <small>SCHOOLS CONNECT</small>
+                </div>
+
+                <span className="stage-caption">
+                  One Community. More Possibilities.
+                </span>
+              </div>
+
+              <div className="visual-bottomline">
+                CONNECTING EDUCATION
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="audience-strip">
+          <div className="container audience-inner">
+            <span>CREATED FOR EDUCATION COMMUNITIES</span>
+            <div>
+              <b>Schools</b>
+              <i />
+              <b>Teachers</b>
+              <i />
+              <b>Students</b>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="about">
+          <div className="container about-grid">
+            <div>
+              <span className="section-kicker">01 / ABOUT US</span>
+              <h2>
+                Education is stronger when we move
+                <span> together.</span>
+              </h2>
+            </div>
+
+            <div className="about-copy">
+              <p>
+                MICAN SCHOOLS CONNECT is being built to bring
+                school communities into one organised digital
+                network.
+              </p>
+              <p>
+                We believe meaningful connections can open doors
+                to collaboration, creativity and new learning
+                opportunities.
+              </p>
+              <p>
+                Our journey begins in Nigeria, with a long-term
+                ambition to connect educational communities
+                across the world.
+              </p>
+            </div>
+          </div>
+
+          <div className="container principles-grid">
+            <article className="principle">
+              <span>01</span>
+              <div>
+                <h3>Built Around Schools</h3>
+                <p>Designed to support the needs of school communities.</p>
+              </div>
+            </article>
+
+            <article className="principle">
+              <span>02</span>
+              <div>
+                <h3>Connected by Design</h3>
+                <p>Bringing students, teachers and institutions closer.</p>
+              </div>
+            </article>
+
+            <article className="principle">
+              <span>03</span>
+              <div>
+                <h3>Ready to Grow</h3>
+                <p>Starting in Nigeria, with a vision for global reach.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="section features-section" id="features">
+          <div className="container">
+            <div className="features-heading">
+              <div>
+                <span className="section-kicker">02 / THE PLATFORM</span>
+                <h2>
+                  One Platform.
+                  <br />
+                  <span>Many Possibilities.</span>
+                </h2>
+              </div>
+
+              <p>
+                A growing collection of experiences designed
+                to help educational communities do more together.
+              </p>
+            </div>
+
+            <div className="feature-grid">
+              {features.map((feature) => (
+                <article className="feature-card" key={feature.number}>
+                  <div className="feature-card-top">
+                    <span className="feature-number">
+                      {feature.number}
+                    </span>
+                    <span className="feature-label">
+                      {feature.label}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3>{feature.title}</h3>
+                    <p>{feature.description}</p>
+                    <span className="feature-arrow">↗</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="vision-section" id="vision">
+          <div className="container vision-panel">
+            <div className="vision-content">
+              <span className="section-kicker">
+                03 / OUR VISION
+              </span>
+
+              <h2>
+                Let’s build a more connected future for education.
+              </h2>
+
+              <p>
+                A network where schools can meet, ideas can travel
+                and potential can be shared.
+              </p>
+
+              <a href="#home" className="btn btn-light">
+                Back to the Beginning ↑
+              </a>
+            </div>
+
+            <div className="vision-emblem">
+              M
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <div className="container footer-main">
+          <a href="#home" className="brand footer-brand">
+            <span className="brand-mark">M</span>
+            <span className="brand-copy">
+              <strong>MICAN</strong>
+              <small>SCHOOLS CONNECT</small>
+            </span>
+          </a>
+
+          <p>
+            One Network. Many Schools. One Connected Future.
+          </p>
+
+          <a href="#home" className="footer-top">
+            Back to Top ↑
+          </a>
+        </div>
+
+        <div className="container footer-bottom">
+          <span>
+            © {new Date().getFullYear()} MICAN Technologies.
+          </span>
+          <span>Built for a world of connected learning.</span>
+        </div>
+      </footer>
+    </>
   );
 }
