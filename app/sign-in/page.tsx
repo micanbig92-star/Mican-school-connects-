@@ -108,6 +108,21 @@ export default function SignInPage() {
               type="submit"
               disabled={loading}
               className="signin-button"
+              style={{
+                display: "block",
+                visibility: "visible",
+                width: "100%",
+                minHeight: "50px",
+                padding: "14px 16px",
+                color: "#ffffff",
+                background: "linear-gradient(110deg, #102b4d, #087f83)",
+                border: "none",
+                borderRadius: "9px",
+                fontSize: "16px",
+                fontWeight: 700,
+                opacity: loading ? 0.65 : 1,
+                cursor: loading ? "wait" : "pointer",
+              }}
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
