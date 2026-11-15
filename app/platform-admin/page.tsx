@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { getPlatformAdmin } from "@/lib/supabase/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { updateSchoolStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -305,6 +306,67 @@ export default async function PlatformAdminPage() {
                         <span className="text-xs font-semibold text-teal-700">
                           MICAN Network
                         </span>
+                      </div>
+
+                      {/* School management actions */}
+                      <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                        {school.status === "pending_review" && (
+                          <>
+                            <form action={updateSchoolStatus}>
+                              <input type="hidden" name="schoolId" value={school.id} />
+                              <input type="hidden" name="status" value="approved" />
+                              <button
+                                type="submit"
+                                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                              >
+                                Approve school
+                              </button>
+                            </form>
+
+                            <form action={updateSchoolStatus}>
+                              <input type="hidden" name="schoolId" value={school.id} />
+                              <input type="hidden" name="status" value="rejected" />
+                              <button
+                                type="submit"
+                                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                              >
+                                Reject application
+                              </button>
+                            </form>
+                          </>
+                        )}
+
+                        {school.status === "approved" && (
+                          <form action={updateSchoolStatus}>
+                            <input type="hidden" name="schoolId" value={school.id} />
+                            <input type="hidden" name="status" value="suspended" />
+                            <button
+                              type="submit"
+                              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                            >
+                              Suspend school
+                            </button>
+                          </form>
+                        )}
+
+                        {school.status === "suspended" && (
+                          <form action={updateSchoolStatus}>
+                            <input type="hidden" name="schoolId" value={school.id} />
+                            <input type="hidden" name="status" value="approved" />
+                            <button
+                              type="submit"
+                              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                            >
+                              Reactivate school
+                            </button>
+                          </form>
+                        )}
+
+                        {school.status === "rejected" && (
+                          <p className="text-xs text-slate-500">
+                            This application has been rejected.
+                          </p>
+                        )}
                       </div>
                     </article>
                   ))}
