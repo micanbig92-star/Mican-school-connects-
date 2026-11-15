@@ -1,0 +1,230 @@
+
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export default async function SchoolDashboardPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const admin = createAdminClient();
+
+  // Only active school owners and administrators can enter.
+  const { data: memberships, error: membershipError } = await admin
+    .from("school_memberships")
+    .select("school_id, role, status")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .in("role", ["owner", "admin"]);
+
+  if (membershipError) {
+    return (
+      <main className="school-dashboard-page">
+        <section className="dashboard-card">
+          <h1>Unable to load your dashboard</h1>
+          <p>Please try again later.</p>
+        </section>
+      </main>
+    );
+  }
+
+  const schoolIds = [
+    ...new Set((memberships || []).map((item) => item.school_id)),
+  ];
+
+  if (schoolIds.length === 0) {
+    redirect("/school-access");
+  }
+
+  // Only load schools that this signed-in manager belongs to.
+  const { data: schools, error: schoolError } = await admin
+    .from("schools")
+    .select(
+      "id, school_name, school_type, country, state, city, contact_email, contact_phone, status"
+    )
+    .in("id", schoolIds)
+    .eq("status", "approved");
+
+  if (schoolError) {
+    return (
+      <main className="school-dashboard-page">
+        <section className="dashboard-card">
+          <h1>Unable to load school information</h1>
+          <p>Please try again later.</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!schools || schools.length === 0) {
+    redirect("/school-access");
+  }
+
+  return (
+    <main className="school-dashboard-page">
+      <div className="dashboard-container">
+        <header className="dashboard-header">
+          <div>
+            <p className="dashboard-brand">MICAN SCHOOLS CONNECT</p>
+            <span className="dashboard-label">SCHOOL MANAGEMENT</span>
+          </div>
+
+          <form action="/auth/sign-out" method="post">
+            <button className="dashboard-signout" type="submit">
+              Sign out
+            </button>
+          </form>
+        </header>
+
+        <section className="dashboard-welcome">
+          <p className="dashboard-kicker">SCHOOL WORKSPACE</p>
+          <h1>Welcome to your dashboard</h1>
+          <p>
+            Manage your school activities from one organised workspace.
+          </p>
+        </section>
+
+        {schools.map((school) => {
+          const membership = memberships.find(
+            (item) => item.school_id === school.id
+          );
+
+          return (
+            <section className="dashboard-school" key={school.id}>
+              <div className="dashboard-school-heading">
+                <div>
+                  <p className="dashboard-kicker">YOUR SCHOOL</p>
+                  <h2>{school.school_name}</h2>
+                  <p>
+                    {school.city}, {school.state}, {school.country}
+                  </p>
+                </div>
+
+                <span className="dashboard-approved">
+                  Approved
+                </span>
+              </div>
+
+              <div className="dashboard-details">
+                <div>
+                  <span>School type</span>
+                  <strong>{school.school_type}</strong>
+                </div>
+
+                <div>
+                  <span>Your role</span>
+                  <strong>{membership?.role || "School member"}</strong>
+                </div>
+
+                <div>
+                  <span>Contact email</span>
+                  <strong>{school.contact_email}</strong>
+                </div>
+
+                <div>
+                  <span>Contact phone</span>
+                  <strong>{school.contact_phone}</strong>
+                </div>
+              </div>
+            </section>
+          );
+        })}
+
+        <section className="dashboard-section">
+          <div className="dashboard-section-heading">
+            <div>
+              <p className="dashboard-kicker">SCHOOL OVERVIEW</p>
+              <h2>Your school at a glance</h2>
+            </div>
+            <span className="dashboard-coming">MORE FEATURES COMING</span>
+          </div>
+
+          <div className="dashboard-stats">
+            <article className="dashboard-stat">
+              <span className="stat-icon">🎓</span>
+              <p>Students</p>
+              <strong>Not set up yet</strong>
+              <small>Student management is coming soon.</small>
+            </article>
+
+            <article className="dashboard-stat">
+              <span className="stat-icon">👩‍🏫</span>
+              <p>Teachers</p>
+              <strong>Not set up yet</strong>
+              <small>Teacher management is coming soon.</small>
+            </article>
+
+            <article className="dashboard-stat">
+              <span className="stat-icon">🏫</span>
+              <p>Classes</p>
+              <strong>Not set up yet</strong>
+              <small>Class management is coming soon.</small>
+            </article>
+          </div>
+        </section>
+
+        <section className="dashboard-section">
+          <p className="dashboard-kicker">MANAGEMENT CENTRE</p>
+          <h2>School management</h2>
+
+          <div className="dashboard-modules">
+            <article className="dashboard-module">
+              <span>🎓</span>
+              <h3>Student Management</h3>
+              <p>Register students and manage their school records.</p>
+              <small>Coming soon</small>
+            </article>
+
+            <article className="dashboard-module">
+              <span>👩‍🏫</span>
+              <h3>Teacher Management</h3>
+              <p>Manage teacher profiles, subjects and permissions.</p>
+              <small>Coming soon</small>
+            </article>
+
+            <article className="dashboard-module">
+              <span>📚</span>
+              <h3>Class Management</h3>
+              <p>Create classes, arms and subject assignments.</p>
+              <small>Coming soon</small>
+            </article>
+
+            <article className="dashboard-module">
+              <span>📅</span>
+              <h3>Attendance</h3>
+              <p>Record and review daily student attendance.</p>
+              <small>Coming soon</small>
+            </article>
+
+            <article className="dashboard-module">
+              <span>📢</span>
+              <h3>Announcements</h3>
+              <p>Share important school notices and updates.</p>
+              <small>Coming soon</small>
+            </article>
+
+            <article className="dashboard-module dashboard-live-module">
+              <span>🎥</span>
+              <h3>MICAN LIVE LEARNING</h3>
+              <p>Give eligible students access to scheduled live tutorials.</p>
+              <small>Planned feature</small>
+            </article>
+          </div>
+        </section>
+
+        <footer className="dashboard-footer">
+          One Network. Many Schools. One Connected Future.
+          <br />
+          © MICAN Technologies
+        </footer>
+      </div>
+    </main>
+  );
+}
