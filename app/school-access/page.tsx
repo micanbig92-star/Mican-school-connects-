@@ -1,4 +1,3 @@
-
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -6,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function SchoolAccessPage() {
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -25,7 +25,9 @@ export default async function SchoolAccessPage() {
     return (
       <main className="school-access-page">
         <div className="access-card">
-          <h1 className="text-2xl font-bold">Unable to check access</h1>
+          <h1 className="text-2xl font-bold">
+            Unable to check access
+          </h1>
           <p className="mt-3 text-slate-500">
             We could not check your school application. Please try again later.
           </p>
@@ -35,7 +37,9 @@ export default async function SchoolAccessPage() {
   }
 
   const schoolIds = [
-    ...new Set((memberships || []).map((membership) => membership.school_id)),
+    ...new Set(
+      (memberships || []).map((membership) => membership.school_id)
+    ),
   ];
 
   let schools: Array<{
@@ -54,7 +58,9 @@ export default async function SchoolAccessPage() {
       return (
         <main className="school-access-page">
           <div className="access-card">
-            <h1 className="text-2xl font-bold">Unable to load school</h1>
+            <h1 className="text-2xl font-bold">
+              Unable to load school
+            </h1>
             <p className="mt-3 text-slate-500">
               Please try again later.
             </p>
@@ -80,11 +86,21 @@ export default async function SchoolAccessPage() {
       school?.status === "approved"
   );
 
+  // Only approved school owners and administrators can see this link.
+  const hasApprovedManagerAccess = applications.some(
+    ({ membership, school }) =>
+      membership.status === "active" &&
+      ["owner", "admin"].includes(membership.role) &&
+      school?.status === "approved"
+  );
+
   return (
     <main className="school-access-page">
       <div className="access-container">
         <header className="access-header">
-          <p className="access-brand">MICAN TECHNOLOGIES</p>
+          <p className="access-brand">
+            MICAN TECHNOLOGIES
+          </p>
 
           <span className="access-label">
             SCHOOL PORTAL
@@ -92,7 +108,9 @@ export default async function SchoolAccessPage() {
         </header>
 
         <section className="access-intro">
-          <p className="access-kicker">WELCOME TO YOUR SCHOOL PORTAL</p>
+          <p className="access-kicker">
+            WELCOME TO YOUR SCHOOL PORTAL
+          </p>
 
           <h1>Your school access</h1>
 
@@ -111,7 +129,10 @@ export default async function SchoolAccessPage() {
               We could not find a school application connected to this account.
             </p>
 
-            <Link href="/register-school" className="access-link">
+            <Link
+              href="/register-school"
+              className="access-link"
+            >
               Register a school
             </Link>
           </section>
@@ -136,7 +157,9 @@ export default async function SchoolAccessPage() {
                 >
                   <div className="access-school-heading">
                     <div>
-                      <p className="access-kicker">SCHOOL APPLICATION</p>
+                      <p className="access-kicker">
+                        SCHOOL APPLICATION
+                      </p>
 
                       <h2>
                         {school?.school_name || "School application"}
@@ -151,12 +174,19 @@ export default async function SchoolAccessPage() {
                   <div className="access-details">
                     <div>
                       <span>Application status</span>
-                      <strong>{school?.status || "Unavailable"}</strong>
+                      <strong>
+                        {school?.status || "Unavailable"}
+                      </strong>
                     </div>
 
                     <div>
                       <span>Membership status</span>
                       <strong>{membership.status}</strong>
+                    </div>
+
+                    <div>
+                      <span>Your role</span>
+                      <strong>{membership.role}</strong>
                     </div>
                   </div>
 
@@ -176,7 +206,8 @@ export default async function SchoolAccessPage() {
                     </p>
                   ) : (
                     <p className="access-message message-pending">
-                      Your application is awaiting review. Please check again later.
+                      Your application is awaiting review. Please check again
+                      later.
                     </p>
                   )}
                 </section>
@@ -190,13 +221,26 @@ export default async function SchoolAccessPage() {
             <h2>School access confirmed</h2>
 
             <p>
-              Your school is approved. The school workspace dashboard is still
-              under development and will be made available when ready.
+              Your school is approved. Your available school services are shown
+              below.
             </p>
+
+            {hasApprovedManagerAccess && (
+              <Link
+                href="/school-dashboard"
+                className="access-link"
+              >
+                Open School Dashboard
+              </Link>
+            )}
           </section>
         )}
 
-        <form action="/auth/sign-out" method="post" className="access-signout">
+        <form
+          action="/auth/sign-out"
+          method="post"
+          className="access-signout"
+        >
           <button type="submit">
             Sign out
           </button>
