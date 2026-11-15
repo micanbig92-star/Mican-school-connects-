@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -17,7 +16,6 @@ export default async function SchoolDashboardPage() {
 
   const admin = createAdminClient();
 
-  // Only active school owners and administrators can enter.
   const { data: memberships, error: membershipError } = await admin
     .from("school_memberships")
     .select("school_id, role, status")
@@ -44,7 +42,6 @@ export default async function SchoolDashboardPage() {
     redirect("/school-access");
   }
 
-  // Only load schools that this signed-in manager belongs to.
   const { data: schools, error: schoolError } = await admin
     .from("schools")
     .select(
@@ -108,9 +105,7 @@ export default async function SchoolDashboardPage() {
                   </p>
                 </div>
 
-                <span className="dashboard-approved">
-                  Approved
-                </span>
+                <span className="dashboard-approved">Approved</span>
               </div>
 
               <div className="dashboard-details">
@@ -160,8 +155,8 @@ export default async function SchoolDashboardPage() {
             <article className="dashboard-stat">
               <span className="stat-icon">👩‍🏫</span>
               <p>Teachers</p>
-              <strong>Coming soon</strong>
-              <small>Teacher management is being developed.</small>
+              <strong>Management available</strong>
+              <small>Open Teacher Management below.</small>
             </article>
 
             <article className="dashboard-stat">
@@ -205,14 +200,19 @@ export default async function SchoolDashboardPage() {
                 <small>Open class management →</small>
               </Link>
 
-              <article className="dashboard-module">
+              <Link
+                href={`/school-dashboard/teachers/${school.id}`}
+                className="dashboard-module"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
                 <span>👩‍🏫</span>
                 <h3>Teacher Management</h3>
                 <p>
-                  Manage teacher profiles, subjects and permissions.
+                  Register teachers, edit staff records and manage employment
+                  status.
                 </p>
-                <small>Coming soon</small>
-              </article>
+                <small>Open teacher management →</small>
+              </Link>
 
               <article className="dashboard-module">
                 <span>📅</span>
