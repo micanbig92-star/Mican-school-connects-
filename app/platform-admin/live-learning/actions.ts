@@ -1,3 +1,4 @@
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -5,12 +6,13 @@ import { redirect } from "next/navigation";
 import { getPlatformAdmin } from "@/lib/supabase/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function createLiveTutorial(formData: FormData) {
   const user = await getPlatformAdmin();
 
-  if (!user) {
-    redirect("/school-access");
-  }
+  if (!user) redirect("/school-access");
 
   const title = String(formData.get("title") || "").trim();
   const subject = String(formData.get("subject") || "").trim();
@@ -23,19 +25,15 @@ export async function createLiveTutorial(formData: FormData) {
   if (title.length < 3 || title.length > 180) {
     throw new Error("Tutorial title must contain 3–180 characters.");
   }
-
   if (subject.length < 2 || subject.length > 120) {
     throw new Error("Please enter a valid subject.");
   }
-
   if (topic.length < 2 || topic.length > 180) {
     throw new Error("Please enter a valid tutorial topic.");
   }
-
   if (description.length > 5000) {
     throw new Error("Description is too long.");
   }
-
   if (!["draft", "published"].includes(status)) {
     throw new Error("Invalid tutorial status.");
   }
@@ -74,4 +72,66 @@ export async function createLiveTutorial(formData: FormData) {
 
   revalidatePath("/platform-admin/live-learning");
   revalidatePath("/platform-admin");
+}
+
+export async function assignLiveTutorial(formData: FormData) {
+  const user = await getPlatformAdmin();
+
+  if (!user) redirect("/school-access");
+
+  const tutorialId = String(formData.get("tutorialId") || "").trim();
+  const teacherId = String(formData.get("teacherId") || "").trim();
+
+  if (!UUID.test(tutorialId) || !UUID.test(teacherId)) {
+    throw new Error("Please select a valid tutorial and teacher.");
+  }
+
+  const admin = createAdminClient();
+
+  const [
+    { data: tutorial, error: tutorialError },
+    { data: teacher, error: teacherError },
+  ] = await Promise.all([
+    admin
+      .from("live_tutorials")
+      .select("id, status")
+      .eq("id", tutorialId)
+      .maybeSingle(),
+    admin
+      .from("platform_live_teachers")
+      .select("id, status")
+      .eq("id", teacherId)
+      .maybeSingle(),
+  ]);
+
+  if (tutorialError || !tutorial || tutorial.status !== "published") {
+    throw new Error("Only an existing published tutorial can be assigned.");
+  }
+
+  if (teacherError || !teacher || teacher.status !== "approved") {
+    throw new Error(
+      "Only an approved MICAN Live Learning teacher can be assigned."
+    );
+  }
+
+  const { error: assignmentError } = await admin
+    .from("live_tutorial_teacher_assignments")
+    .insert({
+      tutorial_id: tutorialId,
+      teacher_id: teacherId,
+      assigned_by: user.id,
+    });
+
+  if (assignmentError) {
+    if (assignmentError.code === "23505") {
+      throw new Error("This tutorial is already assigned to that teacher.");
+    }
+
+    console.error("Live tutorial assignment failed:", assignmentError.message);
+    throw new Error("Unable to assign this tutorial. Please try again.");
+  }
+
+  revalidatePath("/platform-admin/live-learning");
+  revalidatePath("/live-learning/teacher");
+  redirect("/platform-admin/live-learning?assignment=success");
 }
