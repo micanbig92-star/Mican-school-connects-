@@ -1,3 +1,4 @@
+
 {
   "name": "mican-schools-connect",
   "version": "1.0.0",
@@ -21,6 +22,8 @@
     "react-dom": "latest"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "tailwindcss": "^4.1.0",
     "typescript": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
