@@ -1,4 +1,3 @@
-
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getPlatformAdmin } from "@/lib/supabase/platform-admin";
@@ -27,6 +26,20 @@ type Teacher = {
   full_name: string;
   email: string;
   subject_specialisation: string | null;
+  status: string;
+};
+
+type Assignment = {
+  id: string;
+  tutorial_id: string;
+  teacher_id: string;
+  assigned_at: string;
+};
+
+type PageProps = {
+  searchParams: Promise<{
+    assignment?: string;
+  }>;
 };
 
 function formatDate(value: string) {
@@ -53,11 +66,14 @@ function statusStyle(status: string) {
   return "bg-amber-50 text-amber-700 ring-amber-200";
 }
 
-export default async function LiveLearningAdminPage() {
+export default async function LiveLearningAdminPage({
+  searchParams,
+}: PageProps) {
   const user = await getPlatformAdmin();
 
   if (!user) redirect("/school-access");
 
+  const params = await searchParams;
   const admin = createAdminClient();
 
   const [
@@ -74,13 +90,13 @@ export default async function LiveLearningAdminPage() {
 
     admin
       .from("platform_live_teachers")
-      .select("id, full_name, email, subject_specialisation")
-      .eq("status", "approved")
+      .select("id, full_name, email, subject_specialisation, status")
       .order("full_name", { ascending: true }),
 
     admin
       .from("live_tutorial_teacher_assignments")
-      .select("id"),
+      .select("id, tutorial_id, teacher_id, assigned_at")
+      .order("assigned_at", { ascending: false }),
   ]);
 
   if (tutorialError || teacherError || assignmentError) {
@@ -106,21 +122,42 @@ export default async function LiveLearningAdminPage() {
   }
 
   const allTutorials = (tutorials || []) as Tutorial[];
-  const approvedTeachers = (teachers || []) as Teacher[];
+  const allTeachers = (teachers || []) as Teacher[];
+  const allAssignments = (assignments || []) as Assignment[];
+
+  const approvedTeachers = allTeachers.filter(
+    (teacher) => teacher.status === "approved"
+  );
+
   const publishedTutorials = allTutorials.filter(
     (tutorial) => tutorial.status === "published"
   );
+
   const draftCount = allTutorials.filter(
     (tutorial) => tutorial.status === "draft"
   ).length;
+
   const publishedCount = publishedTutorials.length;
-  const assignmentCount = assignments?.length || 0;
+  const assignmentCount = allAssignments.length;
+
+  const teacherById = new Map(
+    allTeachers.map((teacher) => [teacher.id, teacher])
+  );
+
+  const assignmentsByTutorial = new Map<string, Assignment[]>();
+
+  for (const assignment of allAssignments) {
+    const existing =
+      assignmentsByTutorial.get(assignment.tutorial_id) || [];
+
+    existing.push(assignment);
+    assignmentsByTutorial.set(assignment.tutorial_id, existing);
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-9">
 
-        {/* Dashboard header */}
         <header className="overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-950 shadow-2xl">
           <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -128,6 +165,7 @@ export default async function LiveLearningAdminPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-400 text-xl font-black text-slate-950">
                   M
                 </div>
+
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.25em] text-teal-300">
                     MICAN TECHNOLOGIES
@@ -170,7 +208,21 @@ export default async function LiveLearningAdminPage() {
           </div>
         </header>
 
-        {/* Overview cards */}
+        {params.assignment === "success" && (
+          <div
+            role="status"
+            className="rounded-2xl border border-emerald-700/60 bg-emerald-950/50 p-5 text-emerald-200"
+          >
+            <p className="font-bold">
+              Tutorial assigned successfully!
+            </p>
+            <p className="mt-1 text-sm text-emerald-300/80">
+              The assigned tutorial should now appear in the approved
+              teacher's workspace.
+            </p>
+          </div>
+        )}
+
         <section>
           <div className="mb-4">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-400">
@@ -193,7 +245,9 @@ export default async function LiveLearningAdminPage() {
             </div>
 
             <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/30 p-5">
-              <p className="text-sm text-emerald-300">Published tutorials</p>
+              <p className="text-sm text-emerald-300">
+                Published tutorials
+              </p>
               <p className="mt-3 text-3xl font-black text-white">
                 {publishedCount}
               </p>
@@ -213,18 +267,19 @@ export default async function LiveLearningAdminPage() {
             </div>
 
             <div className="rounded-2xl border border-cyan-900/70 bg-cyan-950/20 p-5">
-              <p className="text-sm text-cyan-300">Teacher assignments</p>
+              <p className="text-sm text-cyan-300">
+                Teacher assignments
+              </p>
               <p className="mt-3 text-3xl font-black text-white">
                 {assignmentCount}
               </p>
               <p className="mt-2 text-xs text-cyan-200/60">
-                Recorded tutorial assignments
+                Recorded assignments
               </p>
             </div>
           </div>
         </section>
 
-        {/* Teacher management */}
         <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -248,15 +303,16 @@ export default async function LiveLearningAdminPage() {
           </div>
         </section>
 
-        {/* Assign tutorial */}
         <section className="rounded-2xl border border-teal-900/70 bg-gradient-to-br from-teal-950/50 to-slate-900 p-5 shadow-xl sm:p-7">
           <div className="mb-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-300">
               Tutorial allocation
             </p>
+
             <h2 className="mt-2 text-2xl font-bold text-white">
               Assign a tutorial to a teacher
             </h2>
+
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
               Select a published tutorial and an approved MICAN teacher.
               The assigned tutorial will then appear in that teacher's
@@ -264,7 +320,8 @@ export default async function LiveLearningAdminPage() {
             </p>
           </div>
 
-          {publishedTutorials.length === 0 || approvedTeachers.length === 0 ? (
+          {publishedTutorials.length === 0 ||
+          approvedTeachers.length === 0 ? (
             <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-5">
               {publishedTutorials.length === 0 && (
                 <p className="text-sm text-amber-300">
@@ -301,6 +358,7 @@ export default async function LiveLearningAdminPage() {
                     <option value="" disabled>
                       Choose a tutorial
                     </option>
+
                     {publishedTutorials.map((tutorial) => (
                       <option key={tutorial.id} value={tutorial.id}>
                         {tutorial.title} — {tutorial.subject}
@@ -327,10 +385,12 @@ export default async function LiveLearningAdminPage() {
                     <option value="" disabled>
                       Choose a teacher
                     </option>
+
                     {approvedTeachers.map((teacher) => (
                       <option key={teacher.id} value={teacher.id}>
                         {teacher.full_name} —{" "}
-                        {teacher.subject_specialisation || "No subject listed"}
+                        {teacher.subject_specialisation ||
+                          "No subject listed"}
                       </option>
                     ))}
                   </select>
@@ -340,8 +400,8 @@ export default async function LiveLearningAdminPage() {
               <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
                 <p className="text-xs leading-5 text-slate-400">
                   Security check: the server verifies that the selected
-                  tutorial is published and the selected teacher is approved
-                  before creating the assignment.
+                  tutorial is published and the selected teacher is
+                  approved before creating the assignment.
                 </p>
               </div>
 
@@ -355,15 +415,121 @@ export default async function LiveLearningAdminPage() {
           )}
         </section>
 
-        {/* Create tutorial */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-7">
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+              Assignment records
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-white">
+              Assigned teachers by tutorial
+            </h2>
+            <p className="mt-2 text-sm text-slate-400">
+              See which teachers have been assigned to each tutorial.
+            </p>
+          </div>
+
+          {allAssignments.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-700 p-7 text-center">
+              <p className="font-semibold text-white">
+                No teacher assignments yet
+              </p>
+              <p className="mt-2 text-sm text-slate-400">
+                Assign a published tutorial to an approved teacher above.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {allTutorials
+                .filter((tutorial) =>
+                  assignmentsByTutorial.has(tutorial.id)
+                )
+                .map((tutorial) => {
+                  const tutorialAssignments =
+                    assignmentsByTutorial.get(tutorial.id) || [];
+
+                  return (
+                    <article
+                      key={tutorial.id}
+                      className="rounded-xl border border-slate-700 bg-slate-950/70 p-5"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                            {tutorial.subject}
+                          </p>
+                          <h3 className="mt-1 text-lg font-bold text-white">
+                            {tutorial.title}
+                          </h3>
+                          <p className="mt-1 text-sm text-slate-400">
+                            {tutorial.topic}
+                          </p>
+                        </div>
+
+                        <span className="rounded-full bg-cyan-950 px-3 py-1 text-xs font-bold text-cyan-300">
+                          {tutorialAssignments.length}{" "}
+                          {tutorialAssignments.length === 1
+                            ? "teacher"
+                            : "teachers"}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 space-y-3">
+                        {tutorialAssignments.map((assignment) => {
+                          const teacher = teacherById.get(
+                            assignment.teacher_id
+                          );
+
+                          return (
+                            <div
+                              key={assignment.id}
+                              className="flex flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900 p-4 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                              <div>
+                                <p className="font-semibold text-white">
+                                  {teacher?.full_name ||
+                                    "Teacher record unavailable"}
+                                </p>
+
+                                <p className="mt-1 text-xs text-slate-400">
+                                  {teacher?.subject_specialisation ||
+                                    "Subject not listed"}
+                                  {teacher?.email
+                                    ? ` • ${teacher.email}`
+                                    : ""}
+                                </p>
+
+                                {teacher &&
+                                  teacher.status !== "approved" && (
+                                    <p className="mt-1 text-xs text-amber-300">
+                                      Teacher status: {teacher.status}
+                                    </p>
+                                  )}
+                              </div>
+
+                              <p className="text-xs text-slate-500">
+                                Assigned: {formatDate(assignment.assigned_at)}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </article>
+                  );
+                })}
+            </div>
+          )}
+        </section>
+
         <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-7">
           <div className="mb-7">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-400">
               Content management
             </p>
+
             <h2 className="mt-2 text-2xl font-bold text-white">
               Create a new live tutorial
             </h2>
+
             <p className="mt-2 text-sm text-slate-400">
               Prepare a lesson, set its schedule and publish it when ready.
             </p>
@@ -371,10 +537,15 @@ export default async function LiveLearningAdminPage() {
 
           <form action={createLiveTutorial} className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-200">
+              <label
+                htmlFor="title"
+                className="mb-2 block text-sm font-semibold text-slate-200"
+              >
                 Tutorial title
               </label>
+
               <input
+                id="title"
                 name="title"
                 required
                 minLength={3}
@@ -386,10 +557,15 @@ export default async function LiveLearningAdminPage() {
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-200">
+                <label
+                  htmlFor="subject"
+                  className="mb-2 block text-sm font-semibold text-slate-200"
+                >
                   Subject
                 </label>
+
                 <input
+                  id="subject"
                   name="subject"
                   required
                   maxLength={120}
@@ -399,10 +575,15 @@ export default async function LiveLearningAdminPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-200">
+                <label
+                  htmlFor="topic"
+                  className="mb-2 block text-sm font-semibold text-slate-200"
+                >
                   Topic
                 </label>
+
                 <input
+                  id="topic"
                   name="topic"
                   required
                   maxLength={180}
@@ -413,10 +594,15 @@ export default async function LiveLearningAdminPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-200">
+              <label
+                htmlFor="description"
+                className="mb-2 block text-sm font-semibold text-slate-200"
+              >
                 Tutorial description
               </label>
+
               <textarea
+                id="description"
                 name="description"
                 rows={4}
                 maxLength={5000}
@@ -427,10 +613,15 @@ export default async function LiveLearningAdminPage() {
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-200">
+                <label
+                  htmlFor="scheduledStart"
+                  className="mb-2 block text-sm font-semibold text-slate-200"
+                >
                   Starting date and time
                 </label>
+
                 <input
+                  id="scheduledStart"
                   type="datetime-local"
                   name="scheduledStart"
                   required
@@ -439,10 +630,15 @@ export default async function LiveLearningAdminPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-200">
+                <label
+                  htmlFor="scheduledEnd"
+                  className="mb-2 block text-sm font-semibold text-slate-200"
+                >
                   Ending date and time
                 </label>
+
                 <input
+                  id="scheduledEnd"
                   type="datetime-local"
                   name="scheduledEnd"
                   required
@@ -456,10 +652,15 @@ export default async function LiveLearningAdminPage() {
             </p>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-200">
+              <label
+                htmlFor="status"
+                className="mb-2 block text-sm font-semibold text-slate-200"
+              >
                 Tutorial status
               </label>
+
               <select
+                id="status"
                 name="status"
                 defaultValue="draft"
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-white outline-none focus:border-teal-400"
@@ -478,15 +679,16 @@ export default async function LiveLearningAdminPage() {
           </form>
         </section>
 
-        {/* Tutorial records */}
         <section className="space-y-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-400">
               Tutorial records
             </p>
+
             <h2 className="mt-2 text-2xl font-bold text-white">
               Scheduled tutorials
             </h2>
+
             <p className="mt-2 text-sm text-slate-400">
               Review all created tutorials and their publication status.
             </p>
@@ -514,9 +716,11 @@ export default async function LiveLearningAdminPage() {
                       <p className="text-xs font-bold uppercase tracking-wider text-teal-400">
                         {tutorial.subject}
                       </p>
+
                       <h3 className="mt-2 text-lg font-bold text-white">
                         {tutorial.title}
                       </h3>
+
                       <p className="mt-1 text-sm text-slate-400">
                         {tutorial.topic}
                       </p>
@@ -542,12 +746,44 @@ export default async function LiveLearningAdminPage() {
                         {formatDate(tutorial.scheduled_start)}
                       </p>
                     </div>
+
                     <div>
                       <p className="text-xs text-slate-500">Ends</p>
                       <p className="mt-1 text-slate-200">
                         {formatDate(tutorial.scheduled_end)}
                       </p>
                     </div>
+                  </div>
+
+                  <div className="mt-4 border-t border-slate-800 pt-4">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Assigned teachers
+                    </p>
+
+                    {assignmentsByTutorial.has(tutorial.id) ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(
+                          assignmentsByTutorial.get(tutorial.id) || []
+                        ).map((assignment) => {
+                          const teacher = teacherById.get(
+                            assignment.teacher_id
+                          );
+
+                          return (
+                            <span
+                              key={assignment.id}
+                              className="rounded-lg border border-teal-900 bg-teal-950/50 px-3 py-2 text-xs font-semibold text-teal-200"
+                            >
+                              {teacher?.full_name || "Teacher unavailable"}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-500">
+                        No teacher assigned yet.
+                      </p>
+                    )}
                   </div>
                 </article>
               ))}
