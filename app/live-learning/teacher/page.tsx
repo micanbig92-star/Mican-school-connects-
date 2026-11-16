@@ -208,7 +208,6 @@ export default async function TeacherDashboardPage() {
     );
   }
 
-  // Only this approved teacher's assignments are retrieved.
   const { data: assignments, error: assignmentError } = await admin
     .from("live_tutorial_teacher_assignments")
     .select("tutorial_id, assigned_at")
@@ -362,6 +361,19 @@ export default async function TeacherDashboardPage() {
                           </p>
                         </div>
                       </div>
+
+                      <div className="mt-5 border-t border-slate-700 pt-4">
+                        <Link
+                          href={`/live-learning/teacher/classroom/${tutorial.id}`}
+                          className="inline-flex w-full items-center justify-center rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 transition hover:bg-cyan-300"
+                        >
+                          Join Live Classroom →
+                        </Link>
+
+                        <p className="mt-2 text-center text-xs text-slate-500">
+                          Classroom entry is checked securely when you join.
+                        </p>
+                      </div>
                     </article>
                   );
                 })}
@@ -370,10 +382,11 @@ export default async function TeacherDashboardPage() {
           </section>
 
           <div className="mt-8 rounded-lg border border-slate-700 p-4">
-            <h2 className="font-bold">Next: Live Classroom</h2>
+            <h2 className="font-bold">MICAN Live Classroom</h2>
             <p className="mt-2 text-sm text-slate-400">
-              Live classroom controls and learning materials
-              will be added after assigned tutorials are tested.
+              Your assigned tutorials now have classroom access.
+              The scheduled session window is checked by the secure
+              classroom token service.
             </p>
           </div>
         </div>
