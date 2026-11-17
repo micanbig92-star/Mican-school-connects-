@@ -1,4 +1,3 @@
-
 "use server";
 
 import { redirect } from "next/navigation";
@@ -79,17 +78,23 @@ export async function changeStudentPassword(formData: FormData) {
 
   const { error: updateError } = await admin
     .from("students")
-    .update({ must_change_password: false })
+    .update({
+      must_change_password: false,
+      temporary_password_encrypted: null,
+    })
     .eq("id", student.id)
     .eq("auth_user_id", userId);
 
   if (updateError) {
-    console.error("Student password status update failed:", updateError.message);
+    console.error(
+      "Student password status update failed:",
+      updateError.message,
+    );
 
     return {
       success: false,
       message:
-        "Your password was changed, but account setup could not be completed. Please submit your new password again.",
+        "Your password was changed, but account setup could not be completed. Please contact your school administrator.",
     };
   }
 
