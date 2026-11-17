@@ -1,0 +1,268 @@
+
+/* MICAN SCHOOLS CONNECT — Premium Dashboard Design */
+
+.school-dashboard-page {
+  background:
+    radial-gradient(ellipse at 5% 5%, rgba(8, 127, 131, .13), transparent 32%),
+    radial-gradient(ellipse at 95% 15%, rgba(214, 169, 79, .14), transparent 30%),
+    linear-gradient(135deg, #f5f8ff, #eaf7f5 55%, #fffaf0);
+  padding-top: 38px;
+  padding-bottom: 45px;
+}
+
+.dashboard-container {
+  max-width: 1220px;
+}
+
+.dashboard-header {
+  padding: 17px 22px;
+  background: rgba(255, 255, 255, .82);
+  border: 1px solid rgba(220, 235, 233, .9);
+  border-radius: 18px;
+  box-shadow: 0 10px 35px rgba(16, 43, 77, .055);
+  backdrop-filter: blur(14px);
+}
+
+.dashboard-brand {
+  font-size: 15px;
+  letter-spacing: 2.5px;
+}
+
+.dashboard-signout {
+  padding: 11px 20px;
+  border-radius: 30px;
+  background: linear-gradient(120deg, #102b4d, #087f83);
+  box-shadow: 0 7px 18px rgba(8, 127, 131, .18);
+  transition: .25s ease;
+}
+
+.dashboard-signout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 11px 24px rgba(8, 127, 131, .24);
+}
+
+.dashboard-welcome {
+  position: relative;
+  overflow: hidden;
+  margin: 30px 0 25px;
+  padding: 43px 38px;
+  border-radius: 23px;
+  color: white;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(214, 169, 79, .3), transparent 25%),
+    radial-gradient(circle at 75% 100%, rgba(75, 190, 174, .25), transparent 35%),
+    linear-gradient(120deg, #102b4d, #087f83);
+  box-shadow: 0 20px 45px rgba(16, 43, 77, .16);
+}
+
+.dashboard-welcome::after {
+  content: "M";
+  position: absolute;
+  right: 45px;
+  top: -55px;
+  color: rgba(255, 255, 255, .055);
+  font-family: Georgia, serif;
+  font-size: 240px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.dashboard-welcome .dashboard-kicker {
+  color: #a9e3d9;
+}
+
+.dashboard-welcome h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  color: white;
+  font-family: Georgia, serif;
+  font-size: clamp(32px, 5vw, 48px);
+  letter-spacing: -.8px;
+}
+
+.dashboard-welcome > p:last-child {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+  color: #d6e8e9;
+  font-size: 14px;
+}
+
+.dashboard-school,
+.dashboard-section {
+  margin-bottom: 26px;
+  padding: 29px;
+  border: 1px solid rgba(220, 234, 238, .95);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .93);
+  box-shadow: 0 13px 36px rgba(16, 43, 77, .065);
+  transition: box-shadow .25s ease, transform .25s ease;
+}
+
+.dashboard-school:hover,
+.dashboard-section:hover {
+  box-shadow: 0 18px 43px rgba(16, 43, 77, .09);
+}
+
+.dashboard-school-heading h2,
+.dashboard-section-heading h2,
+.dashboard-section > h2 {
+  color: #102b4d;
+  font-family: Georgia, serif;
+  font-size: 25px;
+}
+
+.dashboard-approved {
+  padding: 9px 16px;
+  border: 1px solid #c6ecd5;
+  box-shadow: 0 5px 13px rgba(8, 116, 67, .06);
+}
+
+.dashboard-details > div {
+  padding: 17px;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #f8fbff, #eff8f7);
+  transition: .2s ease;
+}
+
+.dashboard-details > div:hover {
+  border-color: #a8d8d1;
+  transform: translateY(-2px);
+}
+
+.dashboard-stat {
+  position: relative;
+  overflow: hidden;
+  padding: 23px;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #f5faff, #edf9f6);
+  transition: .25s ease;
+}
+
+.dashboard-stat:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 13px 28px rgba(16, 43, 77, .09);
+}
+
+.dashboard-stat strong {
+  color: #102b4d;
+}
+
+.dashboard-module {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  padding: 23px;
+  border: 1px solid #e1eaf0;
+  border-top: 4px solid #087f83;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #f7fbff);
+  box-shadow: 0 6px 18px rgba(16, 43, 77, .035);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.dashboard-module:hover {
+  transform: translateY(-6px);
+  border-color: #b9dcd8;
+  box-shadow: 0 17px 32px rgba(16, 43, 77, .10);
+}
+
+.dashboard-module > span {
+  display: inline-grid;
+  width: 49px;
+  height: 49px;
+  place-items: center;
+  border-radius: 14px;
+  background: #e8f5f3;
+  font-size: 24px;
+}
+
+.dashboard-module h3 {
+  color: #102b4d;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.dashboard-module p {
+  color: #6b7d91;
+  line-height: 1.8;
+}
+
+.dashboard-module small {
+  padding: 7px 12px;
+  transition: .2s ease;
+}
+
+.dashboard-module:hover small {
+  color: white;
+  background: linear-gradient(110deg, #102b4d, #087f83);
+}
+
+.dashboard-live-module {
+  border-top-color: #d6a94f;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(214, 169, 79, .15), transparent 40%),
+    linear-gradient(145deg, #fffdf7, #f0f8ff);
+}
+
+.dashboard-live-module > span {
+  background: #fff2d7;
+}
+
+.dashboard-live-module small {
+  color: #896013;
+  background: #fff2d7;
+}
+
+.dashboard-footer {
+  padding: 30px 15px;
+  color: #718096;
+  letter-spacing: .3px;
+}
+
+.dashboard-section-heading {
+  margin-bottom: 5px;
+}
+
+@media (max-width: 700px) {
+  .school-dashboard-page {
+    padding: 18px 12px 30px;
+  }
+
+  .dashboard-header {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .dashboard-welcome {
+    margin: 20px 0;
+    padding: 31px 23px;
+    border-radius: 18px;
+  }
+
+  .dashboard-welcome::after {
+    right: 5px;
+    top: -15px;
+    font-size: 150px;
+  }
+
+  .dashboard-school,
+  .dashboard-section {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .dashboard-module {
+    min-height: 195px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-module,
+  .dashboard-stat,
+  .dashboard-signout,
+  .dashboard-details > div {
+    transition: none;
+  }
+}
