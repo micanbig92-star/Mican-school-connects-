@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -55,9 +54,11 @@ function StudentSpeakingControls({
   tutorialId: string;
 }) {
   const room = useRoomContext();
+
   const [requestStatus, setRequestStatus] = useState<
     "none" | "pending" | "approved" | "denied" | "revoked"
   >("none");
+
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
   const [microphoneLoading, setMicrophoneLoading] = useState(false);
@@ -68,7 +69,7 @@ function StudentSpeakingControls({
 
     return Boolean(
       permissions?.canPublish &&
-      permissions.canPublishSources?.includes(Track.Source.Microphone)
+      permissions.canPublishSources?.includes("microphone")
     );
   };
 
@@ -238,9 +239,7 @@ function StudentSpeakingControls({
               disabled={microphoneLoading}
               className="w-full rounded-lg bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
             >
-              {microphoneLoading
-                ? "Turning on..."
-                : "Turn On Microphone"}
+              {microphoneLoading ? "Turning on..." : "Turn On Microphone"}
             </button>
           ) : (
             <button
@@ -249,9 +248,7 @@ function StudentSpeakingControls({
               disabled={microphoneLoading}
               className="w-full rounded-lg bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-600 disabled:opacity-60"
             >
-              {microphoneLoading
-                ? "Turning off..."
-                : "Turn Off Microphone"}
+              {microphoneLoading ? "Turning off..." : "Turn Off Microphone"}
             </button>
           )}
         </div>
@@ -264,10 +261,7 @@ function StudentSpeakingControls({
       ) : null}
 
       {message ? (
-        <p
-          role="status"
-          className="mt-3 text-sm leading-6 text-slate-200"
-        >
+        <p role="status" className="mt-3 text-sm leading-6 text-slate-200">
           {message}
         </p>
       ) : null}
