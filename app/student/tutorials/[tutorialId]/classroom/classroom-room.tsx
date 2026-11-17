@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -65,12 +66,7 @@ function StudentSpeakingControls({
   const [message, setMessage] = useState("");
 
   const hasMicrophonePermission = () => {
-    const permissions = room.localParticipant.permissions;
-
-    return Boolean(
-      permissions?.canPublish &&
-      permissions.canPublishSources?.includes("microphone")
-    );
+    return Boolean(room.localParticipant.permissions?.canPublish);
   };
 
   useEffect(() => {
