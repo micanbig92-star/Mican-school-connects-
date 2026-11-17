@@ -10,16 +10,26 @@ type PageProps = {
   params: Promise<{ tutorialId: string }>;
 };
 
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function StudentTutorialDetailsPage({
   params,
 }: PageProps) {
   const { tutorialId } = await params;
 
-  const supabase = await createClient();
-  const { data: userData, error: userError } =
-    await supabase.auth.getUser();
+  if (!UUID.test(tutorialId)) {
+    notFound();
+  }
 
-  if (userError || !userData.user) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
     redirect("/student/sign-in");
   }
 
@@ -27,8 +37,8 @@ export default async function StudentTutorialDetailsPage({
 
   const { data: student, error: studentError } = await admin
     .from("students")
-    .select("id, school_id, must_change_password")
-    .eq("auth_user_id", userData.user.id)
+    .select("id, school_id, full_name, must_change_password")
+    .eq("auth_user_id", user.id)
     .eq("status", "active")
     .maybeSingle();
 
@@ -40,23 +50,22 @@ export default async function StudentTutorialDetailsPage({
     redirect("/student/change-password");
   }
 
-  const { data: school } = await admin
+  const { data: school, error: schoolError } = await admin
     .from("schools")
-    .select("id")
+    .select("id, school_name")
     .eq("id", student.school_id)
     .eq("status", "approved")
     .maybeSingle();
 
-  if (!school) {
+  if (schoolError || !school) {
     redirect("/student/sign-in");
   }
 
   const { data: enrolment, error: enrolmentError } = await admin
     .from("live_tutorial_school_enrolments")
-    .select("id")
+    .select("id, status")
     .eq("school_id", student.school_id)
     .eq("tutorial_id", tutorialId)
-    .eq("status", "participating")
     .maybeSingle();
 
   if (enrolmentError) {
@@ -78,7 +87,7 @@ export default async function StudentTutorialDetailsPage({
     );
   }
 
-  if (!enrolment) {
+  if (!enrolment || enrolment.status !== "participating") {
     notFound();
   }
 
@@ -95,7 +104,9 @@ export default async function StudentTutorialDetailsPage({
     return (
       <main className="min-h-screen bg-slate-950 p-6 text-white">
         <div className="mx-auto max-w-2xl rounded-2xl border border-slate-700 bg-slate-900 p-6">
-          <h1 className="text-xl font-bold">Tutorial temporarily unavailable</h1>
+          <h1 className="text-xl font-bold">
+            Tutorial temporarily unavailable
+          </h1>
           <p className="mt-3 text-slate-400">
             Please refresh the page and try again.
           </p>
@@ -115,6 +126,24 @@ export default async function StudentTutorialDetailsPage({
       timeZone: "Africa/Lagos",
     }).format(new Date(value));
   }
+
+  const now = Date.now();
+  const start = new Date(tutorial.scheduled_start).getTime();
+  const end = new Date(tutorial.scheduled_end).getTime();
+  const earlyJoinWindow = 15 * 60 * 1000;
+
+  const classroomOpen =
+    Number.isFinite(start) &&
+    Number.isFinite(end) &&
+    end > start &&
+    now >= start - earlyJoinWindow &&
+    now <= end;
+
+  const classroomNotStarted =
+    Number.isFinite(start) && now < start - earlyJoinWindow;
+
+  const classroomEnded =
+    Number.isFinite(end) && now > end;
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-8">
@@ -147,9 +176,12 @@ export default async function StudentTutorialDetailsPage({
 
           <div className="mt-8 space-y-5">
             <div>
-              <h2 className="font-semibold text-white">About this tutorial</h2>
+              <h2 className="font-semibold text-white">
+                About this tutorial
+              </h2>
               <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-300">
-                {tutorial.description || "No additional description has been provided."}
+                {tutorial.description ||
+                  "No additional description has been provided."}
               </p>
             </div>
 
@@ -176,9 +208,43 @@ export default async function StudentTutorialDetailsPage({
                 Your school is participating
               </p>
               <p className="mt-2 text-sm text-slate-300">
-                This tutorial is available to students in your school.
-                Classroom access will be provided through the student portal.
+                You are eligible to attend this tutorial through your
+                school's participation.
               </p>
+            </div>
+
+            <div className="rounded-xl border border-blue-900 bg-blue-950/30 p-5">
+              <h2 className="font-semibold text-blue-200">
+                Live classroom
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Watch your teacher's live video and hear the lesson.
+                Your microphone stays disabled until your teacher approves
+                your request to speak.
+              </p>
+
+              {classroomOpen ? (
+                <Link
+                  href={`/student/tutorials/${tutorial.id}/classroom`}
+                  className="mt-5 block w-full rounded-xl bg-blue-600 px-5 py-4 text-center font-bold text-white transition hover:bg-blue-500"
+                >
+                  Join Live Classroom
+                </Link>
+              ) : classroomNotStarted ? (
+                <div className="mt-5 rounded-lg bg-slate-900 p-4 text-sm text-slate-300">
+                  The classroom is not open yet. You can join 15 minutes
+                  before the scheduled start time.
+                </div>
+              ) : classroomEnded ? (
+                <div className="mt-5 rounded-lg bg-slate-900 p-4 text-sm text-slate-400">
+                  This live tutorial has ended.
+                </div>
+              ) : (
+                <div className="mt-5 rounded-lg bg-slate-900 p-4 text-sm text-slate-400">
+                  The tutorial schedule is currently unavailable.
+                </div>
+              )}
             </div>
           </div>
         </section>
