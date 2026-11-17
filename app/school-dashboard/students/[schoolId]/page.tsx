@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSchoolManager } from "@/lib/supabase/school-manager";
@@ -6,6 +7,7 @@ import {
   updateStudent,
   deleteStudent,
 } from "../../actions";
+import StudentLoginControls from "./student-login-controls";
 
 type Props = {
   params: Promise<{ schoolId: string }>;
@@ -20,7 +22,7 @@ export default async function StudentsPage({ params }: Props) {
       admin
         .from("students")
         .select(
-          "id, admission_number, full_name, class_id, gender, guardian_name, guardian_phone, guardian_email, status"
+          "id, admission_number, full_name, class_id, gender, guardian_name, guardian_phone, guardian_email, status, auth_user_id"
         )
         .eq("school_id", schoolId)
         .order("full_name", { ascending: true }),
@@ -149,6 +151,14 @@ export default async function StudentsPage({ params }: Props) {
                       ? classNames.get(student.class_id) || "Unassigned"
                       : "Unassigned"}
                   </p>
+
+                  <div className="my-4">
+                    <StudentLoginControls
+                      schoolId={schoolId}
+                      studentId={student.id}
+                      hasLogin={Boolean(student.auth_user_id)}
+                    />
+                  </div>
 
                   <form action={updateStudent} className="signin-card">
                     <input
