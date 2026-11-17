@@ -1,0 +1,144 @@
+/* MICAN SCHOOLS CONNECT — Consistent Button Enhancements */
+
+/* Consistent sizing and interaction */
+:where(
+  button,
+  input[type="submit"],
+  input[type="button"],
+  a.btn,
+  .signin-button,
+  .dashboard-signout,
+  .access-signout button
+) {
+  min-height: 46px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease,
+    background-color 180ms ease;
+}
+
+/* Make buttons easier to notice */
+:where(
+  button,
+  input[type="submit"],
+  input[type="button"],
+  a.btn,
+  .signin-button,
+  .dashboard-signout,
+  .access-signout button
+):not(:disabled):not(.danger):not(.delete):not([data-variant="danger"]) {
+  box-shadow: 0 5px 15px rgba(16, 43, 77, 0.12);
+}
+
+/* Hover feedback */
+@media (hover: hover) {
+  :where(
+    button,
+    input[type="submit"],
+    input[type="button"],
+    a.btn,
+    .signin-button,
+    .dashboard-signout,
+    .access-signout button
+  ):not(:disabled):hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 9px 22px rgba(8, 127, 131, 0.2);
+  }
+}
+
+/* Keyboard accessibility */
+:where(
+  button,
+  input[type="submit"],
+  input[type="button"],
+  a,
+  [role="button"]
+):focus-visible {
+  outline: 3px solid #d6a94f;
+  outline-offset: 3px;
+}
+
+/* Disabled buttons */
+:where(button, input[type="submit"], input[type="button"]):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Existing primary portal buttons */
+.btn-primary,
+.signin-button,
+.access-signout button {
+  color: #ffffff;
+  background: linear-gradient(115deg, #102b4d, #087f83);
+  border: 1px solid transparent;
+}
+
+/* Secondary navigation buttons */
+.btn-nav {
+  color: #102b4d;
+  background: linear-gradient(135deg, #e2f5f1, #edf2ff);
+  border: 1px solid #c9e5df;
+}
+
+/* Light buttons */
+.btn-light {
+  color: #102b4d;
+  background: #ffffff;
+  border: 1px solid #dce8ef;
+}
+
+/* Dashboard sign-out */
+.dashboard-signout {
+  color: #ffffff;
+  background: linear-gradient(115deg, #102b4d, #087f83);
+  border: 1px solid transparent;
+}
+
+/* Navigation links remain visually distinct from buttons */
+.nav-links a {
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+/* Better touch targets on phones */
+@media (max-width: 680px) {
+  :where(
+    button,
+    input[type="submit"],
+    input[type="button"],
+    a.btn,
+    .signin-button,
+    .dashboard-signout,
+    .access-signout button
+  ) {
+    min-height: 46px;
+  }
+
+  .hero-actions {
+    gap: 12px;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+}
+
+/* Respect reduced-motion settings */
+@media (prefers-reduced-motion: reduce) {
+  :where(
+    button,
+    input[type="submit"],
+    input[type="button"],
+    a,
+    [role="button"]
+  ) {
+    transition: none !important;
+  }
+}
