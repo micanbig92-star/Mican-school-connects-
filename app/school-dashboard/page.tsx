@@ -241,14 +241,19 @@ export default async function SchoolDashboardPage() {
                 <small>Open announcements management →</small>
               </Link>
 
-              <article className="dashboard-module dashboard-live-module">
+              <Link
+                href={`/school-dashboard/live-learning/${school.id}`}
+                className="dashboard-module dashboard-live-module"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
                 <span>🎥</span>
                 <h3>MICAN LIVE LEARNING</h3>
                 <p>
-                  Give eligible students access to scheduled live tutorials.
+                  Browse live tutorials, view payment instructions and request
+                  access for your school.
                 </p>
-                <small>Planned feature</small>
-              </article>
+                <small>Open MICAN LIVE LEARNING →</small>
+              </Link>
             </div>
           </section>
         ))}
