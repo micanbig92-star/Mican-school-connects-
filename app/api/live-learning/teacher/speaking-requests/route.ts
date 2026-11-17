@@ -17,15 +17,23 @@ function isValidUuid(value: unknown): value is string {
 
 function isSameOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
+
+  if (origin) {
+    try {
+      return new URL(origin).origin === request.nextUrl.origin;
+    } catch {
+      return false;
+    }
+  }
+
+  const fetchSite = request.headers.get("sec-fetch-site");
   const host = request.headers.get("host");
 
-  if (!origin || !host) return false;
-
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
+  return (
+    fetchSite === "same-origin" &&
+    Boolean(host) &&
+    host === request.nextUrl.host
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -62,25 +70,19 @@ export async function GET(request: NextRequest) {
 
     const admin = createAdminClient();
 
-    // Confirm that the signed-in account is an approved MICAN teacher.
     const { data: teacher, error: teacherError } = await admin
       .from("platform_live_teachers")
       .select("id, status")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (
-      teacherError ||
-      !teacher ||
-      teacher.status !== "approved"
-    ) {
+    if (teacherError || !teacher || teacher.status !== "approved") {
       return NextResponse.json(
         { error: "Only approved MICAN teachers can view speaking requests." },
         { status: 403 }
       );
     }
 
-    // Confirm that this teacher is assigned to the requested tutorial.
     const { data: assignment, error: assignmentError } = await admin
       .from("live_tutorial_teacher_assignments")
       .select("id")
@@ -95,25 +97,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Only published tutorials can have an active classroom.
     const { data: tutorial, error: tutorialError } = await admin
       .from("live_tutorials")
       .select("id, title, status, scheduled_start, scheduled_end")
       .eq("id", tutorialId)
       .maybeSingle();
 
-    if (
-      tutorialError ||
-      !tutorial ||
-      tutorial.status !== "published"
-    ) {
+    if (tutorialError || !tutorial || tutorial.status !== "published") {
       return NextResponse.json(
         { error: "This tutorial is not available." },
         { status: 404 }
       );
     }
 
-    // Retrieve speaking requests for this tutorial.
     const { data: requests, error: requestsError } = await admin
       .from("live_tutorial_speaking_requests")
       .select(
@@ -170,6 +166,8 @@ export async function GET(request: NextRequest) {
 
     const safeRequests = (requests || []).map((item) => {
       const student = studentMap.get(item.student_id);
+      const belongsToSchool =
+        Boolean(student) && student?.school_id === item.school_id;
 
       return {
         id: item.id,
@@ -178,18 +176,14 @@ export async function GET(request: NextRequest) {
         status: item.status,
         requestedAt: item.requested_at,
         handledAt: item.handled_at,
-        studentName:
-          student && student.school_id === item.school_id
-            ? student.full_name
-            : "Student record unavailable",
-        admissionNumber:
-          student && student.school_id === item.school_id
-            ? student.admission_number
-            : "",
+        studentName: belongsToSchool
+          ? student!.full_name
+          : "Student record unavailable",
+        admissionNumber: belongsToSchool
+          ? student!.admission_number
+          : "",
         studentActive:
-          Boolean(student) &&
-          student?.school_id === item.school_id &&
-          student?.status === "active",
+          belongsToSchool && student!.status === "active",
       };
     });
 
