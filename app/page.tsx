@@ -67,16 +67,12 @@ export default function Home() {
           <div className="nav-links">
             <a href="#about">About</a>
             <a href="#features">Platform</a>
+            <a href="#portals">Portals</a>
             <a href="#vision">Our Vision</a>
-            <a href="/register-school">Register School</a>
-            <a href="/sign-in" className="nav-signin">
-              Sign In
-            </a>
-            <a href="/school-access">School Portal</a>
           </div>
 
-          <a href="#features" className="btn btn-nav">
-            Explore Platform →
+          <a href="#portals" className="btn btn-primary">
+            Access Platform →
           </a>
         </nav>
       </header>
@@ -104,10 +100,10 @@ export default function Home() {
               </p>
 
               <div className="hero-actions">
-                <a href="#features" className="btn btn-primary">
-                  Discover the Platform →
+                <a href="#portals" className="btn btn-primary">
+                  Access Your Portal →
                 </a>
-                <a href="#about" className="text-link">
+                <a href="#about" className="btn btn-nav">
                   Get to Know Us ↗
                 </a>
               </div>
@@ -126,7 +122,6 @@ export default function Home() {
               <div className="network-stage">
                 <div className="orbit orbit-one" />
                 <div className="orbit orbit-two" />
-
                 <div className="network-line line-one" />
                 <div className="network-line line-two" />
                 <div className="network-line line-three" />
@@ -170,6 +165,104 @@ export default function Home() {
               <b>Teachers</b>
               <i />
               <b>Students</b>
+            </div>
+          </div>
+        </section>
+
+        <section className="section features-section" id="portals">
+          <div className="container">
+            <div className="features-heading">
+              <div>
+                <span className="section-kicker">
+                  ACCESS YOUR ACCOUNT
+                </span>
+                <h2>
+                  Welcome to
+                  <br />
+                  <span>MICAN Portals.</span>
+                </h2>
+              </div>
+
+              <p>
+                Choose the portal that matches your role in the
+                MICAN Schools Connect network.
+              </p>
+            </div>
+
+            <div className="feature-grid">
+              <article className="feature-card">
+                <div className="feature-card-top">
+                  <span className="feature-number">01</span>
+                  <span className="feature-label">SCHOOLS</span>
+                </div>
+                <div>
+                  <h3>School Portal</h3>
+                  <p>
+                    Register your school, sign in and access
+                    your approved school services.
+                  </p>
+                  <a href="/register-school" className="btn btn-primary">
+                    Register Your School →
+                  </a>
+                  <a href="/sign-in" className="btn btn-nav">
+                    School Sign In →
+                  </a>
+                  <a href="/school-access" className="text-link">
+                    Open School Portal ↗
+                  </a>
+                </div>
+              </article>
+
+              <article className="feature-card">
+                <div className="feature-card-top">
+                  <span className="feature-number">02</span>
+                  <span className="feature-label">TEACHERS</span>
+                </div>
+                <div>
+                  <h3>Teacher Portal</h3>
+                  <p>
+                    Apply to become a MICAN Live Learning teacher
+                    or access your approved teacher account.
+                  </p>
+                  <a
+                    href="/live-learning/register"
+                    className="btn btn-primary"
+                  >
+                    Teacher Sign Up →
+                  </a>
+                  <a
+                    href="/live-learning/sign-in"
+                    className="btn btn-nav"
+                  >
+                    Teacher Sign In →
+                  </a>
+                </div>
+              </article>
+
+              <article className="feature-card">
+                <div className="feature-card-top">
+                  <span className="feature-number">03</span>
+                  <span className="feature-label">STUDENTS</span>
+                </div>
+                <div>
+                  <h3>Student Portal</h3>
+                  <p>
+                    Sign in with the school-issued student login
+                    details and access your learning activities
+                    and available live tutorials.
+                  </p>
+                  <a
+                    href="/student/sign-in"
+                    className="btn btn-primary"
+                  >
+                    Student Sign In →
+                  </a>
+                  <p className="portal-note">
+                    Student accounts and temporary passwords
+                    are provided by the school.
+                  </p>
+                </div>
+              </article>
             </div>
           </div>
         </section>
@@ -263,7 +356,6 @@ export default function Home() {
                   <div>
                     <h3>{feature.title}</h3>
                     <p>{feature.description}</p>
-                    <span className="feature-arrow">↗</span>
                   </div>
                 </article>
               ))}
@@ -287,14 +379,12 @@ export default function Home() {
                 and potential can be shared.
               </p>
 
-              <a href="#home" className="btn btn-light">
-                Back to the Beginning ↑
+              <a href="#portals" className="btn btn-light">
+                Explore the Portals ↑
               </a>
             </div>
 
-            <div className="vision-emblem">
-              M
-            </div>
+            <div className="vision-emblem">M</div>
           </div>
         </section>
       </main>
