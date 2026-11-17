@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -178,10 +179,12 @@ export default async function StudentDashboardPage() {
                     )}
                   </p>
 
-                  <p className="mt-4 text-xs text-slate-500">
-                    Tutorial details and classroom access will appear here
-                    as those student features are added.
-                  </p>
+                  <Link
+                    href={`/student/tutorials/${tutorial.id}`}
+                    className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
+                  >
+                    View Tutorial Details →
+                  </Link>
                 </article>
               ))}
             </div>
