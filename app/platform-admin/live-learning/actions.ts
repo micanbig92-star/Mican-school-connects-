@@ -7,7 +7,7 @@ import { getPlatformAdmin } from "@/lib/supabase/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9f]{4}-[0-9f]{4}-[0-9a-f]{12}$/i;
 
 export async function createLiveTutorial(formData: FormData) {
   const user = await getPlatformAdmin();
@@ -22,23 +22,74 @@ export async function createLiveTutorial(formData: FormData) {
   const endValue = String(formData.get("scheduledEnd") || "");
   const status = String(formData.get("status") || "draft");
 
+  const paymentRequired =
+    String(formData.get("paymentRequired") || "false") === "true";
+
+  const priceValue = String(formData.get("priceAmount") || "").trim();
+  const paymentMethod = String(formData.get("paymentMethod") || "").trim();
+  const bankName = String(formData.get("bankName") || "").trim();
+  const accountName = String(formData.get("accountName") || "").trim();
+  const accountNumber = String(formData.get("accountNumber") || "").trim();
+  const paymentInstructions = String(
+    formData.get("paymentInstructions") || ""
+  ).trim();
+
   if (title.length < 3 || title.length > 180) {
     throw new Error("Tutorial title must contain 3–180 characters.");
   }
+
   if (subject.length < 2 || subject.length > 120) {
     throw new Error("Please enter a valid subject.");
   }
+
   if (topic.length < 2 || topic.length > 180) {
     throw new Error("Please enter a valid tutorial topic.");
   }
+
   if (description.length > 5000) {
     throw new Error("Description is too long.");
   }
+
   if (!["draft", "published"].includes(status)) {
     throw new Error("Invalid tutorial status.");
   }
 
-  // Initial scheduling uses Nigeria's West Africa Time (UTC+1).
+  let priceAmount: number | null = null;
+
+  if (paymentRequired) {
+    priceAmount = Number(priceValue);
+
+    if (
+      !priceValue ||
+      !Number.isFinite(priceAmount) ||
+      priceAmount <= 0 ||
+      priceAmount > 999999999999
+    ) {
+      throw new Error("Enter a valid tutorial payment amount.");
+    }
+
+    if (paymentMethod !== "bank_transfer") {
+      throw new Error("Please select bank transfer as the payment method.");
+    }
+
+    if (bankName.length < 2 || bankName.length > 100) {
+      throw new Error("Enter a valid bank name.");
+    }
+
+    if (accountName.length < 2 || accountName.length > 120) {
+      throw new Error("Enter a valid account name.");
+    }
+
+    if (!/^[0-9]{10}$/.test(accountNumber)) {
+      throw new Error("Enter a valid 10-digit bank account number.");
+    }
+
+    if (paymentInstructions.length > 2000) {
+      throw new Error("Payment instructions are too long.");
+    }
+  }
+
+  // Tutorial scheduling uses Nigeria's West Africa Time (UTC+1).
   const scheduledStart = new Date(`${startValue}:00+01:00`);
   const scheduledEnd = new Date(`${endValue}:00+01:00`);
 
@@ -63,6 +114,17 @@ export async function createLiveTutorial(formData: FormData) {
     scheduled_end: scheduledEnd.toISOString(),
     status,
     created_by: user.id,
+
+    payment_required: paymentRequired,
+    price_amount: paymentRequired ? priceAmount : null,
+    price_currency: "NGN",
+    payment_method: paymentRequired ? paymentMethod : null,
+    bank_name: paymentRequired ? bankName : null,
+    account_name: paymentRequired ? accountName : null,
+    account_number: paymentRequired ? accountNumber : null,
+    payment_instructions: paymentRequired
+      ? paymentInstructions || null
+      : null,
   });
 
   if (error) {
@@ -97,6 +159,7 @@ export async function assignLiveTutorial(formData: FormData) {
       .select("id, status")
       .eq("id", tutorialId)
       .maybeSingle(),
+
     admin
       .from("platform_live_teachers")
       .select("id, status")
@@ -133,5 +196,6 @@ export async function assignLiveTutorial(formData: FormData) {
 
   revalidatePath("/platform-admin/live-learning");
   revalidatePath("/live-learning/teacher");
+
   redirect("/platform-admin/live-learning?assignment=success");
 }
