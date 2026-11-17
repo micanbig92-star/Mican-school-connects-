@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   LiveKitRoom,
@@ -9,8 +9,9 @@ import {
   GridLayout,
   ParticipantTile,
   useTracks,
+  useRoomContext,
 } from "@livekit/components-react";
-import { Track } from "livekit-client";
+import { RoomEvent, Track } from "livekit-client";
 import "@livekit/components-styles";
 
 type Credentials = {
@@ -44,6 +45,232 @@ function TeacherVideo() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StudentSpeakingControls({
+  tutorialId,
+}: {
+  tutorialId: string;
+}) {
+  const room = useRoomContext();
+  const [requestStatus, setRequestStatus] = useState<
+    "none" | "pending" | "approved" | "denied" | "revoked"
+  >("none");
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [microphoneLoading, setMicrophoneLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const hasMicrophonePermission = () => {
+    const permissions = room.localParticipant.permissions;
+
+    return Boolean(
+      permissions?.canPublish &&
+      permissions.canPublishSources?.includes(Track.Source.Microphone)
+    );
+  };
+
+  useEffect(() => {
+    function updatePermissionState() {
+      const allowed = hasMicrophonePermission();
+
+      if (allowed) {
+        setRequestStatus("approved");
+      } else {
+        setMicrophoneEnabled(false);
+
+        setRequestStatus((current) =>
+          current === "approved" ? "revoked" : current
+        );
+      }
+    }
+
+    updatePermissionState();
+
+    room.on(
+      RoomEvent.ParticipantPermissionsChanged,
+      updatePermissionState
+    );
+
+    room.on(RoomEvent.LocalTrackPublished, updatePermissionState);
+    room.on(RoomEvent.LocalTrackUnpublished, updatePermissionState);
+
+    return () => {
+      room.off(
+        RoomEvent.ParticipantPermissionsChanged,
+        updatePermissionState
+      );
+      room.off(RoomEvent.LocalTrackPublished, updatePermissionState);
+      room.off(RoomEvent.LocalTrackUnpublished, updatePermissionState);
+    };
+  }, [room]);
+
+  async function requestToSpeak() {
+    setRequestLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(
+        "/api/live-learning/student/request-to-speak",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({ tutorialId }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Your speaking request could not be sent."
+        );
+      }
+
+      setRequestStatus("pending");
+      setMessage(
+        result.message || "Your request has been sent to the teacher."
+      );
+    } catch (err) {
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setRequestLoading(false);
+    }
+  }
+
+  async function turnMicrophoneOn() {
+    setMicrophoneLoading(true);
+    setMessage("");
+
+    try {
+      if (!hasMicrophonePermission()) {
+        setRequestStatus("revoked");
+        throw new Error(
+          "Your microphone permission is not currently active."
+        );
+      }
+
+      await room.localParticipant.setMicrophoneEnabled(true);
+      setMicrophoneEnabled(true);
+      setMessage("Your microphone is on. You can now speak.");
+    } catch (err) {
+      setMicrophoneEnabled(false);
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Unable to turn on your microphone."
+      );
+    } finally {
+      setMicrophoneLoading(false);
+    }
+  }
+
+  async function turnMicrophoneOff() {
+    setMicrophoneLoading(true);
+    setMessage("");
+
+    try {
+      await room.localParticipant.setMicrophoneEnabled(false);
+      setMicrophoneEnabled(false);
+      setMessage("Your microphone is off.");
+    } catch {
+      setMessage("Unable to turn off your microphone. Please try again.");
+    } finally {
+      setMicrophoneLoading(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-blue-900 bg-blue-950/40 p-4">
+      <h3 className="font-semibold text-blue-200">
+        Your speaking permission
+      </h3>
+
+      <p className="mt-2 text-sm leading-6 text-slate-300">
+        Your microphone stays off unless the teacher approves your request.
+        You can turn it on or off yourself after approval.
+      </p>
+
+      {requestStatus === "none" ||
+      requestStatus === "denied" ||
+      requestStatus === "revoked" ? (
+        <button
+          type="button"
+          onClick={requestToSpeak}
+          disabled={requestLoading}
+          className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+        >
+          {requestLoading
+            ? "Sending request..."
+            : requestStatus === "none"
+              ? "Request to Speak"
+              : "Request Permission Again"}
+        </button>
+      ) : null}
+
+      {requestStatus === "pending" ? (
+        <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/40 p-3">
+          <p className="font-semibold text-amber-200">
+            Request sent — waiting for teacher approval
+          </p>
+        </div>
+      ) : null}
+
+      {requestStatus === "approved" ? (
+        <div className="mt-4 space-y-3">
+          <p className="font-semibold text-emerald-300">
+            Your teacher has approved your microphone.
+          </p>
+
+          {!microphoneEnabled ? (
+            <button
+              type="button"
+              onClick={turnMicrophoneOn}
+              disabled={microphoneLoading}
+              className="w-full rounded-lg bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+            >
+              {microphoneLoading
+                ? "Turning on..."
+                : "Turn On Microphone"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={turnMicrophoneOff}
+              disabled={microphoneLoading}
+              className="w-full rounded-lg bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-600 disabled:opacity-60"
+            >
+              {microphoneLoading
+                ? "Turning off..."
+                : "Turn Off Microphone"}
+            </button>
+          )}
+        </div>
+      ) : null}
+
+      {requestStatus === "revoked" ? (
+        <p className="mt-3 text-sm text-amber-200">
+          Your microphone permission is no longer active.
+        </p>
+      ) : null}
+
+      {message ? (
+        <p
+          role="status"
+          className="mt-3 text-sm leading-6 text-slate-200"
+        >
+          {message}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -122,7 +349,9 @@ export default function StudentClassroomRoom({
         <div className="space-y-4 p-3 sm:p-5">
           <div>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="font-semibold text-white">Teacher's live video</h3>
+              <h3 className="font-semibold text-white">
+                Teacher's live video
+              </h3>
               <span className="text-xs text-emerald-300">
                 ● Live session
               </span>
@@ -148,17 +377,8 @@ export default function StudentClassroomRoom({
             >
               <RoomAudioRenderer />
               <TeacherVideo />
+              <StudentSpeakingControls tutorialId={tutorialId} />
             </LiveKitRoom>
-          </div>
-
-          <div className="rounded-xl border border-blue-900 bg-blue-950/40 p-4">
-            <p className="font-semibold text-blue-200">
-              Your microphone is currently disabled
-            </p>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              You can watch the teacher and hear the lesson. You will be able
-              to speak only when the teacher gives you permission.
-            </p>
           </div>
         </div>
 
@@ -206,9 +426,10 @@ export default function StudentClassroomRoom({
           </div>
 
           <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-            <p className="font-semibold text-white">Your microphone</p>
+            <p className="font-semibold text-white">Student microphone</p>
             <p className="mt-1 text-sm text-slate-400">
-              It stays disabled until your teacher approves you to speak.
+              Your microphone stays off until the teacher approves your
+              speaking request.
             </p>
           </div>
         </div>
