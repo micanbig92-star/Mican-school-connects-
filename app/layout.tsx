@@ -1,7 +1,7 @@
-
 import type { Metadata } from "next";
 import "./tailwind.css";
 import "./globals.css";
+import "./button-enhancements.css";
 
 export const metadata: Metadata = {
   title: "MICAN SCHOOLS CONNECT",
