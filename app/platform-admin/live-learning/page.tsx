@@ -143,12 +143,22 @@ export default async function LiveLearningAdminPage({
                 Create tutorials, set payment instructions, assign approved teachers and manage learning sessions.
               </p>
             </div>
+
             <div className="flex flex-wrap gap-3">
-              <Link href="/platform-admin" className="rounded-xl border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-semibold text-white">← Super Admin</Link>
-              <Link href="/platform-admin/live-learning/teachers" className="rounded-xl bg-teal-400 px-5 py-3 text-sm font-bold text-slate-950">Manage Teachers →</Link>
+              <Link href="/platform-admin" className="rounded-xl border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-semibold text-white">
+                ← Super Admin
+              </Link>
+              <Link href="/platform-admin/live-learning/teachers" className="rounded-xl bg-teal-400 px-5 py-3 text-sm font-bold text-slate-950">
+                Manage Teachers →
+              </Link>
+              <Link href="/platform-admin/live-learning/payments" className="rounded-xl border border-amber-400/50 bg-amber-400/10 px-5 py-3 text-sm font-bold text-amber-200 hover:bg-amber-400/20">
+                Review School Payments →
+              </Link>
             </div>
           </div>
-          <div className="border-t border-white/10 px-6 py-3 text-xs text-slate-400">One Network. Many Schools. One Connected Future.</div>
+          <div className="border-t border-white/10 px-6 py-3 text-xs text-slate-400">
+            One Network. Many Schools. One Connected Future.
+          </div>
         </header>
 
         {params.assignment === "success" && (
