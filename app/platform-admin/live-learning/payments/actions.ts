@@ -30,7 +30,7 @@ export async function approveTutorialPayment(formData: FormData) {
 
   const { data: payment, error: paymentError } = await admin
     .from("live_tutorial_payment_requests")
-    .select("id, status, school_id, tutorial_id")
+    .select("id, status, school_id, tutorial_id, proof_storage_path")
     .eq("id", requestId)
     .maybeSingle();
 
@@ -42,7 +42,11 @@ export async function approveTutorialPayment(formData: FormData) {
     throw new Error("Only submitted payments can be approved.");
   }
 
-  const { error } = await admin.schema("private").rpc(
+  if (!payment.proof_storage_path) {
+    throw new Error("Payment proof is missing. Approval is not allowed.");
+  }
+
+  const { error } = await admin.rpc(
     "approve_live_tutorial_payment",
     {
       p_payment_request_id: requestId,
