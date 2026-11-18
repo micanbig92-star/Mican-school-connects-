@@ -1,0 +1,247 @@
+
+.live-tutorial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.live-tutorial-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 25px;
+  overflow: hidden;
+  border: 1px solid rgba(119, 105, 255, 0.16);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(121, 105, 255, 0.12), transparent 42%),
+    linear-gradient(145deg, rgba(255,255,255,0.98), rgba(246,247,255,0.96));
+  box-shadow: 0 14px 40px rgba(34, 31, 85, 0.07);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.live-tutorial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 48px rgba(34, 31, 85, 0.12);
+}
+
+.live-card-top,
+.live-information,
+.live-price,
+.live-payment-details > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.live-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6558e8, #9b75ff);
+  color: white;
+  font-size: 23px;
+}
+
+.live-tag {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eeebff;
+  color: #5949c9;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.live-tutorial-card h3 {
+  margin: 0;
+  color: #211d48;
+  font-size: 21px;
+  line-height: 1.35;
+}
+
+.live-topic {
+  margin: -10px 0 0;
+  color: #6658ce;
+  font-weight: 700;
+}
+
+.live-tutorial-card > p {
+  color: #66677c;
+  line-height: 1.7;
+}
+
+.live-information {
+  align-items: stretch;
+  flex-direction: column;
+  padding: 15px;
+  border-radius: 16px;
+  background: rgba(240, 239, 255, 0.75);
+}
+
+.live-information > div,
+.live-payment-details > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.live-information span,
+.live-price span,
+.live-payment-details span {
+  color: #77778d;
+  font-size: 12px;
+}
+
+.live-information strong,
+.live-payment-details strong {
+  color: #302c58;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.live-price {
+  padding: 16px;
+  border: 1px solid #e9e5ff;
+  border-radius: 16px;
+  background: white;
+}
+
+.live-price strong {
+  color: #5142c4;
+  font-size: 20px;
+}
+
+.live-payment-details {
+  display: grid;
+  gap: 14px;
+  padding: 17px;
+  border-radius: 17px;
+  background: #f5f4ff;
+}
+
+.live-payment-details h4 {
+  margin: 0;
+  color: #302c58;
+}
+
+.live-payment-details p {
+  margin: 0;
+  color: #68677e;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.live-notice {
+  padding: 15px 17px;
+  border: 1px solid #e5e3f4;
+  border-radius: 15px;
+  background: #f8f7ff;
+  color: #4e4b70;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.live-success {
+  border-color: #b9e9d0;
+  background: #effbf4;
+  color: #17633b;
+}
+
+.live-warning {
+  border-color: #f4d8a6;
+  background: #fff8e9;
+  color: #80551a;
+}
+
+.live-request-button {
+  width: 100%;
+  margin-top: auto;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(110deg, #5546d5, #8764ef);
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 180ms ease, transform 180ms ease;
+}
+
+.live-request-button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+.live-access-label {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: #e8f9ef;
+  color: #17633b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.live-empty {
+  padding: 45px 24px;
+  border: 1px dashed #c9c3ef;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #faf9ff, #f0efff);
+  text-align: center;
+}
+
+.live-empty > span {
+  font-size: 42px;
+}
+
+.live-empty h3 {
+  color: #302c58;
+}
+
+.live-empty p {
+  max-width: 480px;
+  margin: 0 auto;
+  color: #77778d;
+  line-height: 1.7;
+}
+
+.dashboard-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .live-tutorial-card {
+    padding: 19px;
+    border-radius: 19px;
+  }
+
+  .live-tutorial-card h3 {
+    font-size: 19px;
+  }
+
+  .live-price strong {
+    font-size: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-tutorial-card,
+  .live-request-button {
+    transition: none;
+  }
+
+  .live-tutorial-card:hover,
+  .live-request-button:hover {
+    transform: none;
+  }
+}
