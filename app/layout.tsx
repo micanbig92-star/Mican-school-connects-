@@ -4,6 +4,7 @@ import "./tailwind.css";
 import "./globals.css";
 import "./button-enhancements.css";
 import "./dashboard-enhancements.css";
+import "./live-learning-enhancements.css";
 
 export const metadata: Metadata = {
   title: "MICAN SCHOOLS CONNECT",
