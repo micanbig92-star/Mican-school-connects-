@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSchoolManager } from "@/lib/supabase/school-manager";
 import { requestLiveTutorialAccess } from "../actions";
+import PaymentProofForm from "../payment-proof-form";
 
 type Props = {
   params: Promise<{ schoolId: string }>;
@@ -174,6 +175,11 @@ export default async function SchoolLiveLearningPage({ params }: Props) {
                     payment.status
                   );
 
+                const canSubmitProof =
+                  requiresPayment &&
+                  payment &&
+                  ["pending", "rejected"].includes(payment.status);
+
                 return (
                   <article
                     className="dashboard-module live-tutorial-card"
@@ -181,17 +187,13 @@ export default async function SchoolLiveLearningPage({ params }: Props) {
                   >
                     <div className="live-card-top">
                       <span className="live-icon">🎓</span>
-                      <span className="live-tag">
-                        {tutorial.subject}
-                      </span>
+                      <span className="live-tag">{tutorial.subject}</span>
                     </div>
 
                     <h3>{tutorial.title}</h3>
                     <p className="live-topic">{tutorial.topic}</p>
 
-                    {tutorial.description && (
-                      <p>{tutorial.description}</p>
-                    )}
+                    {tutorial.description && <p>{tutorial.description}</p>}
 
                     <div className="live-information">
                       <div>
@@ -252,21 +254,26 @@ export default async function SchoolLiveLearningPage({ params }: Props) {
                       </div>
                     ) : payment?.status === "rejected" ? (
                       <div className="live-notice live-warning">
-                        Your previous payment request was rejected.
+                        Your previous payment submission was rejected.
                         {payment.review_note && (
                           <p>Review note: {payment.review_note}</p>
                         )}
+                        You can submit updated payment proof below.
                       </div>
                     ) : alreadyRequested ? (
                       <div className="live-notice">
                         {statusLabel(payment.status)}
-                        {payment.review_note && (
-                          <p>{payment.review_note}</p>
+                        {payment.review_note && <p>{payment.review_note}</p>}
+                        {payment.status === "submitted" && (
+                          <p>
+                            Your proof has been received. Tutorial access
+                            will only be activated after Super Admin approval.
+                          </p>
                         )}
                       </div>
                     ) : null}
 
-                    {!hasAccess && !alreadyRequested && (
+                    {!hasAccess && !payment && (
                       <form action={requestLiveTutorialAccess}>
                         <input
                           type="hidden"
@@ -288,6 +295,13 @@ export default async function SchoolLiveLearningPage({ params }: Props) {
                             : "Request free access"}
                         </button>
                       </form>
+                    )}
+
+                    {!hasAccess && canSubmitProof && (
+                      <PaymentProofForm
+                        schoolId={schoolId}
+                        tutorialId={tutorial.id}
+                      />
                     )}
 
                     {hasAccess && (
