@@ -6,8 +6,9 @@ import { redirect } from "next/navigation";
 import { getPlatformAdmin } from "@/lib/supabase/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// Correct UUID validation.
 const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9f]{4}-[0-9f]{4}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function createLiveTutorial(formData: FormData) {
   const user = await getPlatformAdmin();
@@ -114,7 +115,6 @@ export async function createLiveTutorial(formData: FormData) {
     scheduled_end: scheduledEnd.toISOString(),
     status,
     created_by: user.id,
-
     payment_required: paymentRequired,
     price_amount: paymentRequired ? priceAmount : null,
     price_currency: "NGN",
@@ -190,7 +190,11 @@ export async function assignLiveTutorial(formData: FormData) {
       throw new Error("This tutorial is already assigned to that teacher.");
     }
 
-    console.error("Live tutorial assignment failed:", assignmentError.message);
+    console.error(
+      "Live tutorial assignment failed:",
+      assignmentError.message
+    );
+
     throw new Error("Unable to assign this tutorial. Please try again.");
   }
 
