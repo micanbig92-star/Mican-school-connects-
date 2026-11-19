@@ -5,6 +5,8 @@ import { requireSchoolManager } from "@/lib/supabase/school-manager";
 import {
   createTeacher,
   updateTeacher,
+  archiveTeacher,
+  restoreTeacher,
   deleteTeacher,
 } from "./actions";
 
@@ -19,7 +21,7 @@ export default async function TeachersPage({ params }: Props) {
   const { data: teachers, error } = await admin
     .from("teachers")
     .select(
-      "id, staff_number, full_name, email, phone, gender, subject_specialisation, employment_type, status, joined_on"
+      "id, staff_number, full_name, email, phone, gender, subject_specialisation, employment_type, status, joined_on, archived_at, deleted_at"
     )
     .eq("school_id", schoolId)
     .order("full_name", { ascending: true });
@@ -28,11 +30,23 @@ export default async function TeachersPage({ params }: Props) {
     notFound();
   }
 
-  const activeCount = teachers.filter(
+  const activeTeachers = teachers.filter(
+    (teacher) => !teacher.archived_at && !teacher.deleted_at
+  );
+
+  const archivedTeachers = teachers.filter(
+    (teacher) => teacher.archived_at && !teacher.deleted_at
+  );
+
+  const trashedTeachers = teachers.filter(
+    (teacher) => teacher.deleted_at
+  );
+
+  const activeCount = activeTeachers.filter(
     (teacher) => teacher.status === "active"
   ).length;
 
-  const leaveCount = teachers.filter(
+  const leaveCount = activeTeachers.filter(
     (teacher) => teacher.status === "on_leave"
   ).length;
 
@@ -57,8 +71,8 @@ export default async function TeachersPage({ params }: Props) {
         <section className="dashboard-stats">
           <article className="dashboard-stat">
             <span className="stat-icon">👩‍🏫</span>
-            <p>Total teachers</p>
-            <strong>{teachers.length}</strong>
+            <p>Active records</p>
+            <strong>{activeTeachers.length}</strong>
           </article>
 
           <article className="dashboard-stat">
@@ -71,6 +85,18 @@ export default async function TeachersPage({ params }: Props) {
             <span className="stat-icon">📅</span>
             <p>On leave</p>
             <strong>{leaveCount}</strong>
+          </article>
+
+          <article className="dashboard-stat">
+            <span className="stat-icon">📦</span>
+            <p>Archived</p>
+            <strong>{archivedTeachers.length}</strong>
+          </article>
+
+          <article className="dashboard-stat">
+            <span className="stat-icon">🗑️</span>
+            <p>In Trash</p>
+            <strong>{trashedTeachers.length}</strong>
           </article>
         </section>
 
@@ -164,26 +190,26 @@ export default async function TeachersPage({ params }: Props) {
 
         <section className="dashboard-section">
           <h2>Registered teachers</h2>
-          <p>{teachers.length} teacher records</p>
+          <p>{activeTeachers.length} active teacher records</p>
 
-          {teachers.length === 0 ? (
-            <p>No teachers have been registered yet.</p>
+          {activeTeachers.length === 0 ? (
+            <p>No active teachers have been registered yet.</p>
           ) : (
             <div className="dashboard-modules">
-              {teachers.map((teacher) => (
+              {activeTeachers.map((teacher) => (
                 <article className="dashboard-module" key={teacher.id}>
                   <h3>{teacher.full_name}</h3>
 
                   <p>Staff number: {teacher.staff_number}</p>
-                  <p>Subject: {teacher.subject_specialisation || "Not specified"}</p>
+                  <p>
+                    Subject: {teacher.subject_specialisation || "Not specified"}
+                  </p>
                   <p>Email: {teacher.email || "Not provided"}</p>
                   <p>Phone: {teacher.phone || "Not provided"}</p>
                   <p>
                     Employment: {teacher.employment_type.replace("_", " ")}
                   </p>
-                  <p>
-                    Status: {teacher.status.replace("_", " ")}
-                  </p>
+                  <p>Status: {teacher.status.replace("_", " ")}</p>
 
                   <details>
                     <summary>Edit teacher record</summary>
@@ -245,7 +271,9 @@ export default async function TeachersPage({ params }: Props) {
                         <option value="">Not specified</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
-                        <option value="prefer_not_to_say">Prefer not to say</option>
+                        <option value="prefer_not_to_say">
+                          Prefer not to say
+                        </option>
                       </select>
 
                       <label>Subject specialisation</label>
@@ -293,10 +321,23 @@ export default async function TeachersPage({ params }: Props) {
                   </details>
 
                   <details>
-                    <summary>Delete teacher record</summary>
-                    <p>
-                      Only delete this record if it is no longer needed.
-                    </p>
+                    <summary>More management options</summary>
+
+                    <form action={archiveTeacher}>
+                      <input
+                        type="hidden"
+                        name="schoolId"
+                        value={schoolId}
+                      />
+                      <input
+                        type="hidden"
+                        name="teacherId"
+                        value={teacher.id}
+                      />
+                      <button className="signin-button" type="submit">
+                        Archive teacher
+                      </button>
+                    </form>
 
                     <form action={deleteTeacher}>
                       <input
@@ -309,12 +350,76 @@ export default async function TeachersPage({ params }: Props) {
                         name="teacherId"
                         value={teacher.id}
                       />
-
                       <button className="signin-button" type="submit">
-                        Delete teacher
+                        Move teacher to Trash
                       </button>
                     </form>
                   </details>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Archived teachers</h2>
+          <p>Archived records are hidden from the active teacher list.</p>
+
+          {archivedTeachers.length === 0 ? (
+            <p>No archived teachers.</p>
+          ) : (
+            <div className="dashboard-modules">
+              {archivedTeachers.map((teacher) => (
+                <article className="dashboard-module" key={teacher.id}>
+                  <h3>{teacher.full_name}</h3>
+                  <p>Staff number: {teacher.staff_number}</p>
+                  <p>Subject: {teacher.subject_specialisation || "Not specified"}</p>
+
+                  <form action={restoreTeacher}>
+                    <input type="hidden" name="schoolId" value={schoolId} />
+                    <input type="hidden" name="teacherId" value={teacher.id} />
+                    <button className="signin-button" type="submit">
+                      Restore teacher
+                    </button>
+                  </form>
+
+                  <form action={deleteTeacher}>
+                    <input type="hidden" name="schoolId" value={schoolId} />
+                    <input type="hidden" name="teacherId" value={teacher.id} />
+                    <button className="signin-button" type="submit">
+                      Move to Trash
+                    </button>
+                  </form>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Trash</h2>
+          <p>
+            These teacher records are soft-deleted and can still be restored.
+            They have not been permanently deleted.
+          </p>
+
+          {trashedTeachers.length === 0 ? (
+            <p>Trash is empty.</p>
+          ) : (
+            <div className="dashboard-modules">
+              {trashedTeachers.map((teacher) => (
+                <article className="dashboard-module" key={teacher.id}>
+                  <h3>{teacher.full_name}</h3>
+                  <p>Staff number: {teacher.staff_number}</p>
+                  <p>Subject: {teacher.subject_specialisation || "Not specified"}</p>
+
+                  <form action={restoreTeacher}>
+                    <input type="hidden" name="schoolId" value={schoolId} />
+                    <input type="hidden" name="teacherId" value={teacher.id} />
+                    <button className="signin-button" type="submit">
+                      Restore from Trash
+                    </button>
+                  </form>
                 </article>
               ))}
             </div>
