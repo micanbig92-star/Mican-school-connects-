@@ -10,29 +10,12 @@ function field(formData: FormData, name: string) {
 }
 
 function validId(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    value
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
-const validAudiences = [
-  "everyone",
-  "students",
-  "teachers",
-  "parents",
-];
-
-const validPriorities = [
-  "normal",
-  "important",
-  "urgent",
-];
-
-const validStatuses = [
-  "draft",
-  "published",
-  "archived",
-];
+const validAudiences = ["everyone", "students", "teachers", "parents"];
+const validPriorities = ["normal", "important", "urgent"];
+const validStatuses = ["draft", "published", "archived"];
 
 function validateAnnouncement(formData: FormData) {
   const title = field(formData, "title");
@@ -67,37 +50,28 @@ function validateAnnouncement(formData: FormData) {
     audience,
     priority,
     status,
-    published_at:
-      status === "published"
-        ? new Date().toISOString()
-        : null,
+    published_at: status === "published" ? new Date().toISOString() : null,
     updated_at: new Date().toISOString(),
   };
 }
 
 export async function createAnnouncement(formData: FormData) {
   const schoolId = field(formData, "schoolId");
-
   const announcement = validateAnnouncement(formData);
-
   const { admin, user } = await requireSchoolManager(schoolId);
 
-  const { error } = await admin
-    .from("school_announcements")
-    .insert({
-      ...announcement,
-      school_id: schoolId,
-      created_by: user.id,
-    });
+  const { error } = await admin.from("school_announcements").insert({
+    ...announcement,
+    school_id: schoolId,
+    created_by: user.id,
+  });
 
   if (error) {
     console.error(error.message);
     throw new Error("Unable to create announcement.");
   }
 
-  revalidatePath(
-    `/school-dashboard/announcements/${schoolId}`
-  );
+  revalidatePath(`/school-dashboard/announcements/${schoolId}`);
 }
 
 export async function updateAnnouncement(formData: FormData) {
@@ -109,7 +83,6 @@ export async function updateAnnouncement(formData: FormData) {
   }
 
   const announcement = validateAnnouncement(formData);
-
   const { admin } = await requireSchoolManager(schoolId);
 
   const { data, error } = await admin
@@ -117,6 +90,7 @@ export async function updateAnnouncement(formData: FormData) {
     .update(announcement)
     .eq("id", announcementId)
     .eq("school_id", schoolId)
+    .is("deleted_at", null)
     .select("id")
     .maybeSingle();
 
@@ -125,12 +99,10 @@ export async function updateAnnouncement(formData: FormData) {
     throw new Error("Unable to update this announcement.");
   }
 
-  revalidatePath(
-    `/school-dashboard/announcements/${schoolId}`
-  );
+  revalidatePath(`/school-dashboard/announcements/${schoolId}`);
 }
 
-export async function deleteAnnouncement(formData: FormData) {
+export async function archiveAnnouncement(formData: FormData) {
   const schoolId = field(formData, "schoolId");
   const announcementId = field(formData, "announcementId");
 
@@ -142,18 +114,76 @@ export async function deleteAnnouncement(formData: FormData) {
 
   const { data, error } = await admin
     .from("school_announcements")
-    .delete()
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", announcementId)
+    .eq("school_id", schoolId)
+    .is("archived_at", null)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to archive this announcement.");
+  }
+
+  revalidatePath(`/school-dashboard/announcements/${schoolId}`);
+}
+
+export async function restoreAnnouncement(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const announcementId = field(formData, "announcementId");
+
+  if (!validId(announcementId)) {
+    throw new Error("Invalid announcement record.");
+  }
+
+  const { admin } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin
+    .from("school_announcements")
+    .update({
+      archived_at: null,
+      deleted_at: null,
+      deleted_by: null,
+    })
     .eq("id", announcementId)
     .eq("school_id", schoolId)
     .select("id")
     .maybeSingle();
 
   if (error || !data) {
-    console.error(error?.message);
-    throw new Error("Unable to delete this announcement.");
+    throw new Error("Unable to restore this announcement.");
   }
 
-  revalidatePath(
-    `/school-dashboard/announcements/${schoolId}`
-  );
+  revalidatePath(`/school-dashboard/announcements/${schoolId}`);
+}
+
+export async function deleteAnnouncement(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const announcementId = field(formData, "announcementId");
+
+  if (!validId(announcementId)) {
+    throw new Error("Invalid announcement record.");
+  }
+
+  const { admin, user } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin
+    .from("school_announcements")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+      archived_at: null,
+    })
+    .eq("id", announcementId)
+    .eq("school_id", schoolId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to move this announcement to Trash.");
+  }
+
+  revalidatePath(`/school-dashboard/announcements/${schoolId}`);
 }
