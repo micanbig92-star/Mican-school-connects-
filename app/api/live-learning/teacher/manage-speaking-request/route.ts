@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
     const requestId = body?.requestId;
     const action = body?.action;
 
-    if (!isValidUuid(requestId) || !["approve", "revoke", "deny"].includes(action)) {
+    if (
+      !isValidUuid(requestId) ||
+      !["approve", "revoke", "deny"].includes(action)
+    ) {
       return NextResponse.json(
         { error: "Invalid speaking request or action." },
         { status: 400 }
@@ -71,20 +74,25 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient();
 
-    // Confirm that this account belongs to an approved MICAN live teacher.
+    // Only active, approved MICAN live teachers can manage requests.
     const { data: teacher, error: teacherError } = await admin
       .from("platform_live_teachers")
-      .select("id, status")
+      .select("id, status, archived_at, deleted_at")
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (
       teacherError ||
       !teacher ||
-      teacher.status !== "approved"
+      teacher.status !== "approved" ||
+      teacher.archived_at ||
+      teacher.deleted_at
     ) {
       return NextResponse.json(
-        { error: "Only approved MICAN teachers can manage speaking requests." },
+        {
+          error:
+            "Only active, approved MICAN teachers can manage speaking requests.",
+        },
         { status: 403 }
       );
     }
@@ -92,9 +100,7 @@ export async function POST(request: NextRequest) {
     // Load the speaking request.
     const { data: speakingRequest, error: requestError } = await admin
       .from("live_tutorial_speaking_requests")
-      .select(
-        "id, tutorial_id, student_id, school_id, status"
-      )
+      .select("id, tutorial_id, student_id, school_id, status")
       .eq("id", requestId)
       .maybeSingle();
 
@@ -149,7 +155,10 @@ export async function POST(request: NextRequest) {
       now > end
     ) {
       return NextResponse.json(
-        { error: "Speaking permissions can only be managed during the classroom session." },
+        {
+          error:
+            "Speaking permissions can only be managed during the classroom session.",
+        },
         { status: 400 }
       );
     }
@@ -285,8 +294,7 @@ export async function POST(request: NextRequest) {
       .eq("id", speakingRequest.id);
 
     if (updateError) {
-      // If saving the approval failed, remove the microphone permission
-      // so the student does not keep permission that the database did not record.
+      // If saving approval failed, remove microphone permission.
       if (action === "approve") {
         try {
           await roomService.updateParticipant(
@@ -302,7 +310,7 @@ export async function POST(request: NextRequest) {
             }
           );
         } catch {
-          // The original database error is returned below.
+          // Return the original database error below.
         }
       }
 
@@ -326,7 +334,10 @@ export async function POST(request: NextRequest) {
     console.error("Manage speaking request error:", error);
 
     return NextResponse.json(
-      { error: "An unexpected error occurred while managing the request." },
+      {
+        error:
+          "An unexpected error occurred while managing the request.",
+      },
       { status: 500 }
     );
   }
