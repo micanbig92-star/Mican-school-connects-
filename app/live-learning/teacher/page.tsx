@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -70,7 +71,9 @@ export default async function TeacherDashboardPage() {
 
   const { data: teacher, error: teacherError } = await admin
     .from("platform_live_teachers")
-    .select("id, full_name, status, subject_specialisation")
+    .select(
+      "id, full_name, status, subject_specialisation, archived_at, deleted_at"
+    )
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -115,6 +118,25 @@ export default async function TeacherDashboardPage() {
             >
               Apply as a teacher
             </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Archived or trashed teachers must not enter their workspace.
+  if (teacher.archived_at || teacher.deleted_at) {
+    return (
+      <main className="signin-page">
+        <div className="signin-shell">
+          <div className="signin-card">
+            <h1 className="text-2xl font-bold">
+              Teacher access unavailable
+            </h1>
+            <p className="mt-3 text-slate-400">
+              This teacher account has been archived or moved to Trash.
+              Please contact MICAN Super Admin if you believe this is a mistake.
+            </p>
           </div>
         </div>
       </main>
