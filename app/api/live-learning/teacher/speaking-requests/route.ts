@@ -72,13 +72,19 @@ export async function GET(request: NextRequest) {
 
     const { data: teacher, error: teacherError } = await admin
       .from("platform_live_teachers")
-      .select("id, status")
+      .select("id, status, archived_at, deleted_at")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (teacherError || !teacher || teacher.status !== "approved") {
+    if (
+      teacherError ||
+      !teacher ||
+      teacher.status !== "approved" ||
+      teacher.archived_at ||
+      teacher.deleted_at
+    ) {
       return NextResponse.json(
-        { error: "Only approved MICAN teachers can view speaking requests." },
+        { error: "Only active, approved MICAN teachers can view speaking requests." },
         { status: 403 }
       );
     }
