@@ -1,7 +1,13 @@
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSchoolManager } from "@/lib/supabase/school-manager";
-import { createClass, deleteClass } from "../../actions";
+import {
+  createClass,
+  archiveClass,
+  restoreClass,
+  deleteClass,
+} from "../../actions";
 
 type Props = {
   params: Promise<{ schoolId: string }>;
@@ -11,13 +17,38 @@ export default async function ClassesPage({ params }: Props) {
   const { schoolId } = await params;
   const { admin, school } = await requireSchoolManager(schoolId);
 
-  const { data: classes, error } = await admin
-    .from("school_classes")
-    .select("id, class_name, arm, academic_year, created_at")
-    .eq("school_id", schoolId)
-    .order("class_name", { ascending: true });
+  const [
+    { data: classes, error: classesError },
+    { data: students, error: studentsError },
+  ] = await Promise.all([
+    admin
+      .from("school_classes")
+      .select("id, class_name, arm, academic_year, created_at, archived_at, deleted_at")
+      .eq("school_id", schoolId)
+      .order("class_name", { ascending: true }),
+    admin
+      .from("students")
+      .select("id, class_id")
+      .eq("school_id", schoolId)
+      .is("deleted_at", null),
+  ]);
 
-  if (error) notFound();
+  if (classesError || studentsError || !classes || !students) notFound();
+
+  const activeClasses = classes.filter(
+    (item) => !item.archived_at && !item.deleted_at
+  );
+
+  const archivedClasses = classes.filter(
+    (item) => item.archived_at && !item.deleted_at
+  );
+
+  const trashedClasses = classes.filter(
+    (item) => Boolean(item.deleted_at)
+  );
+
+  const studentCount = (classId: string) =>
+    students.filter((student) => student.class_id === classId).length;
 
   return (
     <main className="school-dashboard-page">
@@ -34,6 +65,24 @@ export default async function ClassesPage({ params }: Props) {
           <p className="dashboard-kicker">SCHOOL WORKSPACE</p>
           <h1>Class Management</h1>
           <p>{school.school_name}</p>
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Class records overview</h2>
+          <div className="dashboard-modules">
+            <article className="dashboard-module">
+              <h3>Active classes</h3>
+              <p>{activeClasses.length}</p>
+            </article>
+            <article className="dashboard-module">
+              <h3>Archived classes</h3>
+              <p>{archivedClasses.length}</p>
+            </article>
+            <article className="dashboard-module">
+              <h3>Classes in Trash</h3>
+              <p>{trashedClasses.length}</p>
+            </article>
+          </div>
         </section>
 
         <section className="dashboard-section">
@@ -78,19 +127,81 @@ export default async function ClassesPage({ params }: Props) {
         </section>
 
         <section className="dashboard-section">
-          <h2>Registered classes</h2>
-          <p>{classes?.length || 0} classes registered</p>
+          <h2>Active classes</h2>
+          <p>{activeClasses.length} active classes</p>
 
-          {!classes?.length ? (
-            <p>No classes have been created yet.</p>
+          {activeClasses.length === 0 ? (
+            <p>No active classes have been created yet.</p>
           ) : (
             <div className="dashboard-modules">
-              {classes.map((item) => (
+              {activeClasses.map((item) => (
                 <article className="dashboard-module" key={item.id}>
                   <h3>{item.class_name} — {item.arm}</h3>
                   <p>Academic year: {item.academic_year}</p>
+                  <p>Students assigned: {studentCount(item.id)}</p>
 
-                  <form action={deleteClass}>
+                  {studentCount(item.id) > 0 && (
+                    <p>
+                      Note: Students remain assigned to this class if it is
+                      archived or moved to Trash. Review their assignments
+                      before taking either action.
+                    </p>
+                  )}
+
+                  <details>
+                    <summary>More class management options</summary>
+
+                    <form action={archiveClass}>
+                      <input
+                        type="hidden"
+                        name="schoolId"
+                        value={schoolId}
+                      />
+                      <input
+                        type="hidden"
+                        name="classId"
+                        value={item.id}
+                      />
+                      <button className="dashboard-signout" type="submit">
+                        Archive class
+                      </button>
+                    </form>
+
+                    <form action={deleteClass}>
+                      <input
+                        type="hidden"
+                        name="schoolId"
+                        value={schoolId}
+                      />
+                      <input
+                        type="hidden"
+                        name="classId"
+                        value={item.id}
+                      />
+                      <button className="dashboard-signout" type="submit">
+                        Move class to Trash
+                      </button>
+                    </form>
+                  </details>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Archived classes</h2>
+          {archivedClasses.length === 0 ? (
+            <p>No archived classes.</p>
+          ) : (
+            <div className="dashboard-modules">
+              {archivedClasses.map((item) => (
+                <article className="dashboard-module" key={item.id}>
+                  <h3>{item.class_name} — {item.arm}</h3>
+                  <p>Academic year: {item.academic_year}</p>
+                  <p>Students assigned: {studentCount(item.id)}</p>
+
+                  <form action={restoreClass}>
                     <input
                       type="hidden"
                       name="schoolId"
@@ -101,8 +212,65 @@ export default async function ClassesPage({ params }: Props) {
                       name="classId"
                       value={item.id}
                     />
-                    <button className="dashboard-signout" type="submit">
-                      Delete class
+                    <button className="signin-button" type="submit">
+                      Restore class
+                    </button>
+                  </form>
+
+                  <details>
+                    <summary>More options</summary>
+                    <form action={deleteClass}>
+                      <input
+                        type="hidden"
+                        name="schoolId"
+                        value={schoolId}
+                      />
+                      <input
+                        type="hidden"
+                        name="classId"
+                        value={item.id}
+                      />
+                      <button className="dashboard-signout" type="submit">
+                        Move to Trash
+                      </button>
+                    </form>
+                  </details>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Trash</h2>
+          <p>
+            Trashed classes are hidden from normal class lists.
+            Student assignments are not automatically removed.
+          </p>
+
+          {trashedClasses.length === 0 ? (
+            <p>Trash is empty.</p>
+          ) : (
+            <div className="dashboard-modules">
+              {trashedClasses.map((item) => (
+                <article className="dashboard-module" key={item.id}>
+                  <h3>{item.class_name} — {item.arm}</h3>
+                  <p>Academic year: {item.academic_year}</p>
+                  <p>Students assigned: {studentCount(item.id)}</p>
+
+                  <form action={restoreClass}>
+                    <input
+                      type="hidden"
+                      name="schoolId"
+                      value={schoolId}
+                    />
+                    <input
+                      type="hidden"
+                      name="classId"
+                      value={item.id}
+                    />
+                    <button className="signin-button" type="submit">
+                      Restore class
                     </button>
                   </form>
                 </article>
