@@ -82,8 +82,8 @@ export async function updateClass(formData: FormData) {
   revalidatePath(`/school-dashboard/classes/${schoolId}`);
 }
 
-// DELETE CLASS
-export async function deleteClass(formData: FormData) {
+// ARCHIVE CLASS
+export async function archiveClass(formData: FormData) {
   const schoolId = field(formData, "schoolId");
   const classId = field(formData, "classId");
 
@@ -91,16 +91,72 @@ export async function deleteClass(formData: FormData) {
 
   const { admin } = await requireSchoolManager(schoolId);
 
-  const { error } = await admin.from("school_classes")
-    .delete()
+  const { data, error } = await admin.from("school_classes")
+    .update({ archived_at: new Date().toISOString() })
     .eq("id", classId)
-    .eq("school_id", schoolId);
+    .eq("school_id", schoolId)
+    .is("archived_at", null)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === "23503") {
-      throw new Error("Move students out of this class before deleting it.");
-    }
-    throw new Error("Unable to delete class.");
+  if (error || !data) {
+    throw new Error("Unable to archive this class.");
+  }
+
+  revalidatePath(`/school-dashboard/classes/${schoolId}`);
+}
+
+// RESTORE CLASS
+export async function restoreClass(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const classId = field(formData, "classId");
+
+  if (!validId(classId)) throw new Error("Invalid class.");
+
+  const { admin } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin.from("school_classes")
+    .update({
+      archived_at: null,
+      deleted_at: null,
+      deleted_by: null,
+    })
+    .eq("id", classId)
+    .eq("school_id", schoolId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to restore this class.");
+  }
+
+  revalidatePath(`/school-dashboard/classes/${schoolId}`);
+}
+
+// MOVE CLASS TO TRASH
+export async function deleteClass(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const classId = field(formData, "classId");
+
+  if (!validId(classId)) throw new Error("Invalid class.");
+
+  const { admin, user } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin.from("school_classes")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+      archived_at: null,
+    })
+    .eq("id", classId)
+    .eq("school_id", schoolId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to move this class to Trash.");
   }
 
   revalidatePath(`/school-dashboard/classes/${schoolId}`);
@@ -194,7 +250,8 @@ export async function updateStudent(formData: FormData) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", studentId)
-    .eq("school_id", schoolId);
+    .eq("school_id", schoolId)
+    .is("deleted_at", null);
 
   if (error) {
     if (error.code === "23505") {
@@ -206,22 +263,89 @@ export async function updateStudent(formData: FormData) {
   revalidatePath(`/school-dashboard/students/${schoolId}`);
 }
 
-// DELETE STUDENT
+// ARCHIVE STUDENT
+export async function archiveStudent(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const studentId = field(formData, "studentId");
+
+  if (!validId(studentId)) {
+    throw new Error("Invalid student.");
+  }
+
+  const { admin } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin.from("students")
+    .update({
+      archived_at: new Date().toISOString(),
+    })
+    .eq("id", studentId)
+    .eq("school_id", schoolId)
+    .is("archived_at", null)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to archive this student.");
+  }
+
+  revalidatePath(`/school-dashboard/students/${schoolId}`);
+}
+
+// RESTORE STUDENT
+export async function restoreStudent(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const studentId = field(formData, "studentId");
+
+  if (!validId(studentId)) {
+    throw new Error("Invalid student.");
+  }
+
+  const { admin } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin.from("students")
+    .update({
+      archived_at: null,
+      deleted_at: null,
+      deleted_by: null,
+    })
+    .eq("id", studentId)
+    .eq("school_id", schoolId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to restore this student.");
+  }
+
+  revalidatePath(`/school-dashboard/students/${schoolId}`);
+}
+
+// MOVE STUDENT TO TRASH
 export async function deleteStudent(formData: FormData) {
   const schoolId = field(formData, "schoolId");
   const studentId = field(formData, "studentId");
 
-  if (!validId(studentId)) throw new Error("Invalid student.");
+  if (!validId(studentId)) {
+    throw new Error("Invalid student.");
+  }
 
-  const { admin } = await requireSchoolManager(schoolId);
+  const { admin, user } = await requireSchoolManager(schoolId);
 
-  const { error } = await admin.from("students")
-    .delete()
+  const { data, error } = await admin.from("students")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+      archived_at: null,
+    })
     .eq("id", studentId)
-    .eq("school_id", schoolId);
+    .eq("school_id", schoolId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
-    throw new Error("Unable to delete student.");
+  if (error || !data) {
+    throw new Error("Unable to move this student to Trash.");
   }
 
   revalidatePath(`/school-dashboard/students/${schoolId}`);
