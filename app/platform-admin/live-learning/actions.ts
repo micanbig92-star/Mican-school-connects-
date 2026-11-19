@@ -162,7 +162,7 @@ export async function assignLiveTutorial(formData: FormData) {
 
     admin
       .from("platform_live_teachers")
-      .select("id, status")
+      .select("id, status, archived_at, deleted_at")
       .eq("id", teacherId)
       .maybeSingle(),
   ]);
@@ -171,9 +171,16 @@ export async function assignLiveTutorial(formData: FormData) {
     throw new Error("Only an existing published tutorial can be assigned.");
   }
 
-  if (teacherError || !teacher || teacher.status !== "approved") {
+  // Archived and trashed teachers cannot receive new assignments.
+  if (
+    teacherError ||
+    !teacher ||
+    teacher.status !== "approved" ||
+    teacher.archived_at ||
+    teacher.deleted_at
+  ) {
     throw new Error(
-      "Only an approved MICAN Live Learning teacher can be assigned."
+      "Only active, approved MICAN Live Learning teachers can be assigned."
     );
   }
 
