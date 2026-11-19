@@ -219,18 +219,4 @@ export async function deleteTeacher(formData: FormData) {
   revalidatePath(`/school-dashboard/teachers/${schoolId}`);
 }
 
-  const { admin } = await requireSchoolManager(schoolId);
-
-  const { error } = await admin
-    .from("teachers")
-    .delete()
-    .eq("id", teacherId)
-    .eq("school_id", schoolId);
-
-  if (error) {
-    console.error(error.message);
-    throw new Error("Unable to delete teacher.");
-  }
-
-  revalidatePath(`/school-dashboard/teachers/${schoolId}`);
-}
+ 
