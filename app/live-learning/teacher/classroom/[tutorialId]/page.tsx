@@ -33,11 +33,17 @@ export default async function TeacherClassroomPage({ params }: Props) {
 
   const { data: teacher, error: teacherError } = await admin
     .from("platform_live_teachers")
-    .select("id, full_name, status")
+    .select("id, full_name, status, archived_at, deleted_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (teacherError || !teacher || teacher.status !== "approved") {
+  if (
+    teacherError ||
+    !teacher ||
+    teacher.status !== "approved" ||
+    teacher.archived_at ||
+    teacher.deleted_at
+  ) {
     redirect("/live-learning/teacher");
   }
 
