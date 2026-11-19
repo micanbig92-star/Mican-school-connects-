@@ -2,41 +2,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  RoomServiceClient,
+  TrackSource,
+} from "livekit-server-sdk";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function isValidUuid(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      value
-    )
+const isValidUuid = (value: unknown): value is string =>
+  typeof value === "string" &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
   );
-}
 
 function isSameOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
-
-  if (origin) {
-    try {
-      return new URL(origin).origin === request.nextUrl.origin;
-    } catch {
-      return false;
-    }
-  }
-
-  const fetchSite = request.headers.get("sec-fetch-site");
   const host = request.headers.get("host");
 
-  return (
-    fetchSite === "same-origin" &&
-    Boolean(host) &&
-    host === request.nextUrl.host
-  );
+  if (!origin || !host) return false;
+
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     if (!isSameOrigin(request)) {
       return NextResponse.json(
@@ -45,17 +38,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const tutorialId = request.nextUrl.searchParams.get("tutorialId");
-
-    if (!isValidUuid(tutorialId)) {
+    if (!request.headers.get("content-type")?.includes("application/json")) {
       return NextResponse.json(
-        { error: "A valid tutorial ID is required." },
+        { error: "JSON content is required." },
+        { status: 415 }
+      );
+    }
+
+    const body = await request.json();
+    const requestId = body?.requestId;
+    const action = body?.action;
+
+    if (
+      !isValidUuid(requestId) ||
+      !["approve", "revoke", "deny"].includes(action)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid speaking request or action." },
         { status: 400 }
       );
     }
 
     const supabase = await createClient();
-
     const {
       data: { user },
       error: authError,
@@ -70,6 +74,7 @@ export async function GET(request: NextRequest) {
 
     const admin = createAdminClient();
 
+    // Confirm that this account belongs to an active, approved MICAN teacher.
     const { data: teacher, error: teacherError } = await admin
       .from("platform_live_teachers")
       .select("id, status, archived_at, deleted_at")
@@ -84,15 +89,32 @@ export async function GET(request: NextRequest) {
       teacher.deleted_at
     ) {
       return NextResponse.json(
-        { error: "Only active, approved MICAN teachers can view speaking requests." },
+        { error: "Only active, approved MICAN teachers can manage speaking requests." },
         { status: 403 }
       );
     }
 
+    // Load the speaking request.
+    const { data: speakingRequest, error: requestError } = await admin
+      .from("live_tutorial_speaking_requests")
+      .select(
+        "id, tutorial_id, student_id, school_id, status"
+      )
+      .eq("id", requestId)
+      .maybeSingle();
+
+    if (requestError || !speakingRequest) {
+      return NextResponse.json(
+        { error: "Speaking request not found." },
+        { status: 404 }
+      );
+    }
+
+    // Confirm that this teacher is assigned to this tutorial.
     const { data: assignment, error: assignmentError } = await admin
       .from("live_tutorial_teacher_assignments")
       .select("id")
-      .eq("tutorial_id", tutorialId)
+      .eq("tutorial_id", speakingRequest.tutorial_id)
       .eq("teacher_id", teacher.id)
       .maybeSingle();
 
@@ -103,118 +125,213 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Confirm that the tutorial is published and currently active.
     const { data: tutorial, error: tutorialError } = await admin
       .from("live_tutorials")
-      .select("id, title, status, scheduled_start, scheduled_end")
-      .eq("id", tutorialId)
+      .select("id, status, scheduled_start, scheduled_end")
+      .eq("id", speakingRequest.tutorial_id)
       .maybeSingle();
 
-    if (tutorialError || !tutorial || tutorial.status !== "published") {
+    if (
+      tutorialError ||
+      !tutorial ||
+      tutorial.status !== "published"
+    ) {
       return NextResponse.json(
         { error: "This tutorial is not available." },
-        { status: 404 }
+        { status: 400 }
       );
     }
 
-    const { data: requests, error: requestsError } = await admin
-      .from("live_tutorial_speaking_requests")
-      .select(
-        "id, student_id, school_id, status, requested_at, handled_at"
-      )
-      .eq("tutorial_id", tutorialId)
-      .order("requested_at", { ascending: true })
-      .limit(200);
+    const now = Date.now();
+    const start = new Date(tutorial.scheduled_start).getTime();
+    const end = new Date(tutorial.scheduled_end).getTime();
 
-    if (requestsError) {
-      console.error("Speaking requests query error:", requestsError);
-
+    if (
+      !Number.isFinite(start) ||
+      !Number.isFinite(end) ||
+      now < start - 15 * 60 * 1000 ||
+      now > end
+    ) {
       return NextResponse.json(
-        { error: "Could not load speaking requests." },
+        { error: "Speaking permissions can only be managed during the classroom session." },
+        { status: 400 }
+      );
+    }
+
+    // Confirm that the student is still active in the correct school.
+    const { data: student, error: studentError } = await admin
+      .from("students")
+      .select("id, school_id, auth_user_id, status")
+      .eq("id", speakingRequest.student_id)
+      .eq("school_id", speakingRequest.school_id)
+      .maybeSingle();
+
+    if (
+      studentError ||
+      !student ||
+      student.status !== "active" ||
+      !student.auth_user_id
+    ) {
+      return NextResponse.json(
+        { error: "This student is not eligible to speak." },
+        { status: 403 }
+      );
+    }
+
+    // Confirm that the student's school is participating.
+    const { data: enrolment, error: enrolmentError } = await admin
+      .from("live_tutorial_school_enrolments")
+      .select("id, status")
+      .eq("tutorial_id", speakingRequest.tutorial_id)
+      .eq("school_id", speakingRequest.school_id)
+      .maybeSingle();
+
+    if (
+      enrolmentError ||
+      !enrolment ||
+      enrolment.status !== "participating"
+    ) {
+      return NextResponse.json(
+        { error: "The student's school is not participating." },
+        { status: 403 }
+      );
+    }
+
+    if (action === "approve" && speakingRequest.status !== "pending") {
+      return NextResponse.json(
+        { error: "Only pending requests can be approved." },
+        { status: 409 }
+      );
+    }
+
+    if (action === "deny" && speakingRequest.status !== "pending") {
+      return NextResponse.json(
+        { error: "Only pending requests can be denied." },
+        { status: 409 }
+      );
+    }
+
+    if (action === "revoke" && speakingRequest.status !== "approved") {
+      return NextResponse.json(
+        { error: "Only approved speaking permissions can be revoked." },
+        { status: 409 }
+      );
+    }
+
+    const liveKitUrl = process.env.LIVEKIT_URL;
+    const liveKitApiKey = process.env.LIVEKIT_API_KEY;
+    const liveKitApiSecret = process.env.LIVEKIT_API_SECRET;
+
+    if (!liveKitUrl || !liveKitApiKey || !liveKitApiSecret) {
+      return NextResponse.json(
+        { error: "Live classroom service is not configured." },
         { status: 500 }
       );
     }
 
-    const studentIds = [
-      ...new Set((requests || []).map((item) => item.student_id)),
-    ];
+    const roomName = `mican-live-${tutorial.id}`;
 
-    let students: Array<{
-      id: string;
-      full_name: string;
-      admission_number: string;
-      school_id: string;
-      status: string;
-    }> = [];
+    // The student must currently be connected to this classroom.
+    const roomService = new RoomServiceClient(
+      liveKitUrl,
+      liveKitApiKey,
+      liveKitApiSecret
+    );
 
-    if (studentIds.length > 0) {
-      const { data: studentRows, error: studentsError } = await admin
-        .from("students")
-        .select(
-          "id, full_name, admission_number, school_id, status"
-        )
-        .in("id", studentIds);
+    const participants = await roomService.listParticipants(roomName);
+    const connectedStudent = participants.find(
+      (participant) => participant.identity === student.auth_user_id
+    );
 
-      if (studentsError) {
-        console.error("Speaking request students query error:", studentsError);
-
-        return NextResponse.json(
-          { error: "Could not load student details." },
-          { status: 500 }
-        );
-      }
-
-      students = studentRows || [];
+    if (!connectedStudent) {
+      return NextResponse.json(
+        { error: "The student is not currently inside this classroom." },
+        { status: 409 }
+      );
     }
 
-    const studentMap = new Map(
-      students.map((student) => [student.id, student])
-    );
+    // Students can publish microphone audio only.
+    // Camera and screen sharing are never granted.
+    if (action === "approve" || action === "revoke") {
+      await roomService.updateParticipant(roomName, student.auth_user_id, {
+        permission:
+          action === "approve"
+            ? {
+                canPublish: true,
+                canPublishSources: [TrackSource.MICROPHONE],
+                canSubscribe: true,
+                canPublishData: false,
+              }
+            : {
+                canPublish: false,
+                canPublishSources: [],
+                canSubscribe: true,
+                canPublishData: false,
+              },
+      });
+    }
 
-    const safeRequests = (requests || []).map((item) => {
-      const student = studentMap.get(item.student_id);
-      const belongsToSchool =
-        Boolean(student) && student?.school_id === item.school_id;
+    const newStatus =
+      action === "approve"
+        ? "approved"
+        : action === "revoke"
+          ? "revoked"
+          : "denied";
 
-      return {
-        id: item.id,
-        studentId: item.student_id,
-        schoolId: item.school_id,
-        status: item.status,
-        requestedAt: item.requested_at,
-        handledAt: item.handled_at,
-        studentName: belongsToSchool
-          ? student!.full_name
-          : "Student record unavailable",
-        admissionNumber: belongsToSchool
-          ? student!.admission_number
-          : "",
-        studentActive:
-          belongsToSchool && student!.status === "active",
-      };
-    });
+    const { error: updateError } = await admin
+      .from("live_tutorial_speaking_requests")
+      .update({
+        status: newStatus,
+        handled_by: user.id,
+        handled_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", speakingRequest.id);
 
-    return NextResponse.json(
-      {
-        success: true,
-        tutorial: {
-          id: tutorial.id,
-          title: tutorial.title,
-          scheduledStart: tutorial.scheduled_start,
-          scheduledEnd: tutorial.scheduled_end,
-        },
-        requests: safeRequests,
-      },
-      {
-        headers: {
-          "Cache-Control": "no-store, max-age=0",
-        },
+    if (updateError) {
+      // If saving the approval failed, remove microphone permission
+      // so the student does not keep permission that was not recorded.
+      if (action === "approve") {
+        try {
+          await roomService.updateParticipant(
+            roomName,
+            student.auth_user_id,
+            {
+              permission: {
+                canPublish: false,
+                canPublishSources: [],
+                canSubscribe: true,
+                canPublishData: false,
+              },
+            }
+          );
+        } catch {
+          // The original database error is returned below.
+        }
       }
-    );
+
+      return NextResponse.json(
+        { error: "Could not save the speaking request decision." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      status: newStatus,
+      message:
+        action === "approve"
+          ? "Student microphone permission approved."
+          : action === "revoke"
+            ? "Student microphone permission revoked."
+            : "Speaking request denied.",
+    });
   } catch (error) {
-    console.error("Teacher speaking requests error:", error);
+    console.error("Manage speaking request error:", error);
 
     return NextResponse.json(
-      { error: "An unexpected error occurred." },
+      { error: "An unexpected error occurred while managing the request." },
       { status: 500 }
     );
   }
