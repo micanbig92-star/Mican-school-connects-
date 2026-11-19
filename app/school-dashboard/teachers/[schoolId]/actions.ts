@@ -133,6 +133,62 @@ export async function updateTeacher(formData: FormData) {
   revalidatePath(`/school-dashboard/teachers/${schoolId}`);
 }
 
+export async function archiveTeacher(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const teacherId = field(formData, "teacherId");
+
+  if (!validId(teacherId)) {
+    throw new Error("Invalid teacher record.");
+  }
+
+  const { admin } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin
+    .from("teachers")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", teacherId)
+    .eq("school_id", schoolId)
+    .is("archived_at", null)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to archive this teacher.");
+  }
+
+  revalidatePath(`/school-dashboard/teachers/${schoolId}`);
+}
+
+export async function restoreTeacher(formData: FormData) {
+  const schoolId = field(formData, "schoolId");
+  const teacherId = field(formData, "teacherId");
+
+  if (!validId(teacherId)) {
+    throw new Error("Invalid teacher record.");
+  }
+
+  const { admin } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin
+    .from("teachers")
+    .update({
+      archived_at: null,
+      deleted_at: null,
+      deleted_by: null,
+    })
+    .eq("id", teacherId)
+    .eq("school_id", schoolId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to restore this teacher.");
+  }
+
+  revalidatePath(`/school-dashboard/teachers/${schoolId}`);
+}
+
 export async function deleteTeacher(formData: FormData) {
   const schoolId = field(formData, "schoolId");
   const teacherId = field(formData, "teacherId");
@@ -140,6 +196,28 @@ export async function deleteTeacher(formData: FormData) {
   if (!validId(teacherId)) {
     throw new Error("Invalid teacher record.");
   }
+
+  const { admin, user } = await requireSchoolManager(schoolId);
+
+  const { data, error } = await admin
+    .from("teachers")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+      archived_at: null,
+    })
+    .eq("id", teacherId)
+    .eq("school_id", schoolId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("Unable to move this teacher to Trash.");
+  }
+
+  revalidatePath(`/school-dashboard/teachers/${schoolId}`);
+}
 
   const { admin } = await requireSchoolManager(schoolId);
 
